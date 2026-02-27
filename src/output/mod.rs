@@ -3,5 +3,5 @@
 pub mod formatter;
 pub mod theme;
 
-pub use formatter::{format_models_table, mask_api_key};
+pub use formatter::format_models_table;
 pub use theme::{print_info, print_success, print_warning};

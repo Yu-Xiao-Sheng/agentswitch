@@ -26,21 +26,12 @@ impl ModelConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 pub struct AppConfig {
     #[serde(default)]
     pub models: Vec<ModelConfig>,
     #[serde(default)]
     pub active_models: HashMap<String, String>,
-}
-
-impl Default for AppConfig {
-    fn default() -> Self {
-        Self {
-            models: Vec::new(),
-            active_models: HashMap::new(),
-        }
-    }
 }
 
 impl AppConfig {
@@ -56,10 +47,12 @@ impl AppConfig {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn get_model(&self, name: &str) -> Option<&ModelConfig> {
         self.models.iter().find(|m| m.name == name)
     }
 
+    #[allow(dead_code)]
     pub fn get_model_mut(&mut self, name: &str) -> Option<&mut ModelConfig> {
         self.models.iter_mut().find(|m| m.name == name)
     }

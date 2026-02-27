@@ -39,15 +39,15 @@ impl ModelCommands {
                 base_url,
                 api_key,
                 model,
-            } => execute_add_model(&name, &base_url, &api_key, &model),
+            } => execute_add_model(name, base_url, api_key, model),
             ModelCommands::List => execute_list_models(),
-            ModelCommands::Remove { name } => execute_remove_model(&name),
+            ModelCommands::Remove { name } => execute_remove_model(name),
             ModelCommands::Edit {
                 name,
                 base_url,
                 api_key,
                 model,
-            } => execute_edit_model(&name, base_url.as_ref(), api_key.as_ref(), model.as_ref()),
+            } => execute_edit_model(name, base_url.as_ref(), api_key.as_ref(), model.as_ref()),
         }
     }
 }

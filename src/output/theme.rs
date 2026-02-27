@@ -10,6 +10,7 @@ pub fn print_success(message: &str) {
 }
 
 /// 打印错误信息
+#[allow(dead_code)]
 pub fn print_error(message: &str) {
     eprintln!("{} {}", "✗".red(), message);
 }
@@ -25,6 +26,7 @@ pub fn print_info(message: &str) {
 }
 
 /// 打印详细错误信息（带上下文）
+#[allow(dead_code)]
 pub fn print_detailed_error(error: &anyhow::Error, context: &str) {
     print_error(context);
     eprintln!("  详细信息: {}", error);

@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+#[allow(dead_code)]
 pub fn set_file_permissions(path: &Path) -> anyhow::Result<()> {
     #[cfg(unix)]
     {
