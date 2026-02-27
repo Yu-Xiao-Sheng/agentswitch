@@ -1,0 +1,25 @@
+[package]
+name = "agentswitch"
+version = "0.1.0"
+edition = "2024"
+description = "A universal model configuration switcher for code agent CLI tools"
+authors = ["Yu-Xiao-Sheng"]
+license = "MIT"
+repository = "https://github.com/Yu-Xiao-Sheng/agentswitch"
+readme = "README.md"
+keywords = ["code-agent", "cli", "config", "openai", "model-switch"]
+categories = ["command-line-utilities", "development-tools"]
+
+[[bin]]
+name = "asw"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+dirs = "5.0"
+anyhow = "1.0"
+colored = "2.1"
+chrono = "0.4"
