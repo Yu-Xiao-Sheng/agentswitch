@@ -1,20 +1,46 @@
+//! CLI 命令行界面模块
+
+use clap::{Parser, Subcommand};
+
 pub mod commands;
-pub mod args;
 
-use clap::Parser;
-use commands::Commands;
+pub use commands::ModelCommands;
 
-#[derive(Parser)]
+/// AgentSwitch CLI
+#[derive(Parser, Debug)]
 #[command(name = "asw")]
-#[command(about = "A universal model configuration switcher for code agent CLI tools", long_about = None)]
-#[command(version = "0.1.0")]
+#[command(about = "代码终端代理工具配置切换器", long_about = None)]
+#[command(version)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Command,
 }
 
-impl Cli {
+#[derive(Subcommand, Debug)]
+pub enum Command {
+    /// Model configuration management
+    #[command(subcommand)]
+    Model(ModelCommands),
+
+    /// Show current configuration status
+    Status {
+        #[arg(long, short)]
+        detailed: bool,
+    },
+}
+
+impl Command {
     pub fn run(&self) -> anyhow::Result<()> {
-        self.command.run()
+        match self {
+            Command::Model(cmd) => cmd.run(),
+            Command::Status { detailed } => {
+                if *detailed {
+                    println!("详细状态信息...");
+                } else {
+                    println!("当前状态信息...");
+                }
+                Ok(())
+            }
+        }
     }
 }

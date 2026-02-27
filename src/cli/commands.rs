@@ -1,240 +1,137 @@
-use clap::Subcommand;
-use crate::cli::args::StatusArgs;
+//! CLI 命令实现
 
-#[derive(Subcommand)]
-pub enum Commands {
-    /// Initialize configuration
-    Init,
+use crate::config::{ConfigStore, ModelConfig};
+use crate::output::{format_models_table, print_info, print_success, print_warning};
+use crate::utils::{validate_model_name, validate_url};
 
-    /// Model configuration management
-    #[command(subcommand)]
-    Model(ModelCommands),
-
-    /// Agent tool management
-    #[command(subcommand)]
-    Agent(AgentCommands),
-
-    /// Switch agent tool to use a different model
-    Switch {
-        /// Agent tool name (e.g., claude-code, codex, gemini)
-        agent: String,
-
-        /// Model configuration name to apply
-        model: String,
-    },
-
-    /// Show current configuration status
-    Status(StatusArgs),
-
-    /// Backup management
-    #[command(subcommand)]
-    Backup(BackupCommands),
-
-    /// Preset management
-    #[command(subcommand)]
-    Preset(PresetCommands),
-}
-
-#[derive(Subcommand)]
+/// Model 管理命令
+#[derive(clap::Subcommand, Debug)]
 pub enum ModelCommands {
-    /// Add a new model configuration
     Add {
-        /// Model configuration name
         name: String,
-
-        /// Base URL for the API
         #[arg(long)]
         base_url: String,
-
-        /// API key for authentication
         #[arg(long)]
         api_key: String,
-
-        /// Model ID
         #[arg(long)]
         model: String,
     },
-
-    /// List all model configurations
     List,
-
-    /// Remove a model configuration
     Remove {
-        /// Model configuration name to remove
         name: String,
     },
-
-    /// Edit a model configuration
     Edit {
-        /// Model configuration name to edit
         name: String,
+        #[arg(long)]
+        base_url: Option<String>,
+        #[arg(long)]
+        api_key: Option<String>,
+        #[arg(long)]
+        model: Option<String>,
     },
 }
 
 impl ModelCommands {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
-            ModelCommands::Add { name, base_url, api_key, model } => {
-                println!("Adding model configuration: {}", name);
-                println!("  Base URL: {}", base_url);
-                println!("  Model ID: {}", model);
-                // TODO: Implement actual model addition
-                Ok(())
-            }
-            ModelCommands::List => {
-                println!("Listing all model configurations...");
-                // TODO: Implement list models
-                Ok(())
-            }
-            ModelCommands::Remove { name } => {
-                println!("Removing model configuration: {}", name);
-                // TODO: Implement model removal
-                Ok(())
-            }
-            ModelCommands::Edit { name } => {
-                println!("Editing model configuration: {}", name);
-                // TODO: Implement model editing
-                Ok(())
-            }
+            ModelCommands::Add {
+                name,
+                base_url,
+                api_key,
+                model,
+            } => execute_add_model(&name, &base_url, &api_key, &model),
+            ModelCommands::List => execute_list_models(),
+            ModelCommands::Remove { name } => execute_remove_model(&name),
+            ModelCommands::Edit {
+                name,
+                base_url,
+                api_key,
+                model,
+            } => execute_edit_model(&name, base_url.as_ref(), api_key.as_ref(), model.as_ref()),
         }
     }
 }
 
-#[derive(Subcommand)]
-pub enum AgentCommands {
-    /// List installed agent tools
-    List,
+fn execute_add_model(
+    name: &str,
+    base_url: &str,
+    api_key: &str,
+    model_id: &str,
+) -> anyhow::Result<()> {
+    validate_model_name(name)?;
+    validate_url(base_url)?;
 
-    /// Detect agent tool installation status
-    Detect,
+    let model_config = ModelConfig::new(
+        name.to_string(),
+        base_url.to_string(),
+        api_key.to_string(),
+        model_id.to_string(),
+    );
+
+    let mut store = ConfigStore::new()?;
+    store.add_model(model_config)?;
+
+    print_success(&format!("模型配置已添加: {}", name));
+
+    Ok(())
 }
 
-impl AgentCommands {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match self {
-            AgentCommands::List => {
-                println!("Listing installed agent tools...");
-                // TODO: Implement list agents
-                Ok(())
-            }
-            AgentCommands::Detect => {
-                println!("Detecting agent tools...");
-                // TODO: Implement detection
-                Ok(())
-            }
-        }
+fn execute_list_models() -> anyhow::Result<()> {
+    let store = ConfigStore::new()?;
+    let models = store.list_models();
+
+    if models.is_empty() {
+        print_warning("当前没有配置任何模型");
+        print_info("使用 'asw model add <name>' 添加模型配置");
+    } else {
+        println!();
+        println!("{}", format_models_table(models));
     }
+
+    Ok(())
 }
 
-#[derive(Subcommand)]
-pub enum BackupCommands {
-    /// List all backups
-    List,
+fn execute_remove_model(name: &str) -> anyhow::Result<()> {
+    let mut store = ConfigStore::new()?;
+    store.remove_model(name)?;
 
-    /// Restore a backup
-    Restore {
-        /// Backup ID to restore
-        backup_id: String,
-    },
+    print_success(&format!("模型配置已删除: {}", name));
 
-    /// Clean old backups
-    Clean {
-        /// Number of recent backups to keep
-        #[arg(long, default_value = "5")]
-        keep: usize,
-    },
+    Ok(())
 }
 
-impl BackupCommands {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match self {
-            BackupCommands::List => {
-                println!("Listing backups...");
-                // TODO: Implement list backups
-                Ok(())
-            }
-            BackupCommands::Restore { backup_id } => {
-                println!("Restoring backup: {}", backup_id);
-                // TODO: Implement restore
-                Ok(())
-            }
-            BackupCommands::Clean { keep } => {
-                println!("Cleaning old backups (keeping {})", keep);
-                // TODO: Implement clean
-                Ok(())
-            }
-        }
+fn execute_edit_model(
+    name: &str,
+    base_url: Option<&String>,
+    api_key: Option<&String>,
+    model: Option<&String>,
+) -> anyhow::Result<()> {
+    let mut store = ConfigStore::new()?;
+
+    if base_url.is_none() && api_key.is_none() && model.is_none() {
+        print_warning("没有指定任何要更新的字段");
+        print_info("使用 --base-url, --api-key, 或 --model 指定要更新的字段");
+        return Ok(());
     }
-}
 
-#[derive(Subcommand)]
-pub enum PresetCommands {
-    /// Save current configuration as a preset
-    Save {
-        /// Preset name
-        name: String,
-    },
-
-    /// List all presets
-    List,
-
-    /// Apply a preset configuration
-    Apply {
-        /// Preset name to apply
-        name: String,
-    },
-}
-
-impl PresetCommands {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match self {
-            PresetCommands::Save { name } => {
-                println!("Saving preset: {}", name);
-                // TODO: Implement save preset
-                Ok(())
-            }
-            PresetCommands::List => {
-                println!("Listing presets...");
-                // TODO: Implement list presets
-                Ok(())
-            }
-            PresetCommands::Apply { name } => {
-                println!("Applying preset: {}", name);
-                // TODO: Implement apply preset
-                Ok(())
-            }
+    store.edit_model(name, |model_config| {
+        if let Some(url) = base_url {
+            validate_url(url)?;
+            model_config.base_url = url.clone();
         }
-    }
-}
 
-impl Commands {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match self {
-            Commands::Init => {
-                println!("Initializing configuration...");
-                // TODO: Implement initialization
-                Ok(())
-            }
-            Commands::Model(cmd) => {
-                cmd.run()
-            }
-            Commands::Agent(cmd) => {
-                cmd.run()
-            }
-            Commands::Switch { agent, model } => {
-                println!("Switching {} to use model {}", agent, model);
-                // TODO: Implement switch logic
-                Ok(())
-            }
-            Commands::Status(args) => {
-                args.run()
-            }
-            Commands::Backup(cmd) => {
-                cmd.run()
-            }
-            Commands::Preset(cmd) => {
-                cmd.run()
-            }
+        if let Some(key) = api_key {
+            model_config.api_key = key.clone();
         }
-    }
+
+        if let Some(model_id) = model {
+            model_config.model_id = model_id.clone();
+        }
+
+        Ok(())
+    })?;
+
+    print_success(&format!("模型配置已更新: {}", name));
+
+    Ok(())
 }

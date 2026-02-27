@@ -1,4 +1,7 @@
-pub mod store;
-pub mod models;
+//! 配置管理模块
 
-pub use models::{ModelConfig, AppConfig};
+pub mod models;
+pub mod store;
+
+pub use models::ModelConfig;
+pub use store::ConfigStore;
