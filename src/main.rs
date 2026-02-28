@@ -1,12 +1,20 @@
-mod cli;
-mod config;
-mod agents;
-
-use cli::Cli;
+use anyhow::Result;
 use clap::Parser;
 
-fn main() -> anyhow::Result<()> {
+mod cli;
+mod config;
+mod output;
+mod utils;
+
+use cli::Cli;
+
+fn main() -> Result<()> {
     let cli = Cli::parse();
-    cli.run()?;
+
+    if let Err(e) = cli.command.run() {
+        eprintln!("✗ 错误: {}", e);
+        std::process::exit(1);
+    }
+
     Ok(())
 }
