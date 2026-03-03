@@ -8,8 +8,8 @@ use std::path::PathBuf;
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, Default)]
 struct GeminiSettings {
     #[serde(default)]
-    defaultModel: Option<GeminiModel>,
     #[allow(non_snake_case)]
+    defaultModel: Option<GeminiModel>,
 }
 
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
