@@ -11,8 +11,7 @@ pub fn check_file_readonly(path: &Path) -> Result<bool> {
         return Ok(false);
     }
 
-    let metadata = fs::metadata(path)
-        .context("读取文件元数据失败")?;
+    let metadata = fs::metadata(path).context("读取文件元数据失败")?;
 
     #[cfg(unix)]
     {
@@ -44,8 +43,7 @@ pub fn resolve_symlink(path: &Path) -> Result<PathBuf> {
         if let Ok(metadata) = fs::metadata(path) {
             let file_type = metadata.file_type();
             if file_type.is_symlink() {
-                return fs::canonicalize(path)
-                    .context("解析符号链接失败");
+                return fs::canonicalize(path).context("解析符号链接失败");
             }
         }
     }
@@ -93,12 +91,10 @@ pub fn atomic_write(path: &Path, content: &[u8]) -> Result<()> {
     let temp_path = path.with_extension("tmp");
 
     // 写入临时文件
-    fs::write(&temp_path, content)
-        .context("写入临时文件失败")?;
+    fs::write(&temp_path, content).context("写入临时文件失败")?;
 
     // 原子重命名
-    fs::rename(&temp_path, path)
-        .context("移动文件失败")?;
+    fs::rename(&temp_path, path).context("移动文件失败")?;
 
     Ok(())
 }

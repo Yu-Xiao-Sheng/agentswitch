@@ -40,7 +40,6 @@ impl AgentAdapter for ClaudeCodeAdapter {
         "claude-code"
     }
 
-
     fn detect(&self) -> Result<bool> {
         // 检查可执行文件是否存在（在 PATH 中）
         let in_path = which::which("claude-code").is_ok();
@@ -65,15 +64,13 @@ impl AgentAdapter for ClaudeCodeAdapter {
             .join("backups")
             .join("claude-code");
 
-        std::fs::create_dir_all(&backup_dir)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(&backup_dir).context("Failed to create backup directory")?;
 
         let timestamp = chrono::Utc::now();
         let backup_filename = format!("backup-{}.json", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path)
-            .context("Failed to backup configuration")?;
+        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
 
         Ok(Backup {
             agent_name: self.name().to_string(),
@@ -88,10 +85,8 @@ impl AgentAdapter for ClaudeCodeAdapter {
 
         // 读取或创建配置文件
         let mut config = if config_path.exists() {
-            let content = fs::read_to_string(&config_path)
-                .context("读取配置文件失败")?;
-            serde_json::from_str::<ClaudeCodeConfig>(&content)
-                .context("解析配置文件失败")?
+            let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
+            serde_json::from_str::<ClaudeCodeConfig>(&content).context("解析配置文件失败")?
         } else {
             // 配置文件不存在，创建默认配置
             ClaudeCodeConfig::default()
@@ -100,23 +95,21 @@ impl AgentAdapter for ClaudeCodeAdapter {
         // 应用模型配置到 env 字段
         config.env.insert(
             "ANTHROPIC_AUTH_TOKEN".to_string(),
-            json!(model_config.api_key.clone())
+            json!(model_config.api_key.clone()),
         );
         config.env.insert(
             "ANTHROPIC_BASE_URL".to_string(),
-            json!(model_config.base_url.clone())
+            json!(model_config.base_url.clone()),
         );
         config.env.insert(
             "ANTHROPIC_MODEL".to_string(),
-            json!(model_config.model_id.clone())
+            json!(model_config.model_id.clone()),
         );
 
         // 写回配置文件
-        let content = serde_json::to_string_pretty(&config)
-            .context("序列化配置失败")?;
+        let content = serde_json::to_string_pretty(&config).context("序列化配置失败")?;
 
-        fs::write(&config_path, content)
-            .context("写入配置文件失败")?;
+        fs::write(&config_path, content).context("写入配置文件失败")?;
 
         Ok(())
     }
@@ -134,14 +127,15 @@ impl AgentAdapter for ClaudeCodeAdapter {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&config_path)
-            .context("读取配置文件失败")?;
+        let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
 
-        let config: ClaudeCodeConfig = serde_json::from_str(&content)
-            .context("解析配置文件失败")?;
+        let config: ClaudeCodeConfig =
+            serde_json::from_str(&content).context("解析配置文件失败")?;
 
         // 从 env 字段读取模型 ID
-        Ok(config.env.get("ANTHROPIC_MODEL")
+        Ok(config
+            .env
+            .get("ANTHROPIC_MODEL")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()))
     }

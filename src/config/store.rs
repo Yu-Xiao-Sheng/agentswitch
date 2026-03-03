@@ -161,8 +161,14 @@ impl ConfigStore {
     }
 
     /// 更新指定 agent 的激活模型
-    pub fn update_active_model(&mut self, agent_name: &str, model_name: &str) -> anyhow::Result<()> {
-        self.config.active_models.insert(agent_name.to_string(), model_name.to_string());
+    pub fn update_active_model(
+        &mut self,
+        agent_name: &str,
+        model_name: &str,
+    ) -> anyhow::Result<()> {
+        self.config
+            .active_models
+            .insert(agent_name.to_string(), model_name.to_string());
         self.save()
     }
 

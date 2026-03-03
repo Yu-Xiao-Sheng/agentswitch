@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 
 pub mod commands;
 
-pub use commands::{ModelCommands, AgentCommands, BackupCommands};
+pub use commands::{AgentCommands, BackupCommands, ModelCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]
@@ -51,12 +51,8 @@ impl Command {
             Command::Model(cmd) => cmd.run(),
             Command::Agent(cmd) => cmd.run(),
             Command::Backup(cmd) => cmd.run(),
-            Command::Status { detailed: _ } => {
-                commands::execute_show_status()
-            }
-            Command::Switch { agent, model } => {
-                commands::execute_switch(agent, model)
-            }
+            Command::Status { detailed: _ } => commands::execute_show_status(),
+            Command::Switch { agent, model } => commands::execute_switch(agent, model),
         }
     }
 }

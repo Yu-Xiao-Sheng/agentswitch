@@ -1,8 +1,8 @@
+use crate::config::ModelConfig;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::collections::HashSet;
-use crate::config::ModelConfig;
+use std::path::PathBuf;
 
 /// 配置文件格式枚举
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -163,7 +163,11 @@ impl IncompatibleFieldDetector {
     ///
     /// # 返回
     /// 返回工具特定的不兼容字段警告
-    pub fn detect_for_agent(&self, fields: &HashSet<String>, agent_name: &str) -> Vec<FieldWarning> {
+    pub fn detect_for_agent(
+        &self,
+        fields: &HashSet<String>,
+        agent_name: &str,
+    ) -> Vec<FieldWarning> {
         let mut warnings = self.detect(fields, agent_name);
 
         // 添加工具特定的不兼容字段
@@ -232,7 +236,10 @@ pub fn format_field_warnings(warnings: &[FieldWarning]) -> String {
             WarningLevel::Error => "❌",
         };
 
-        output.push_str(&format!("  {} {}: {}\n", icon, warning.field_name, warning.message));
+        output.push_str(&format!(
+            "  {} {}: {}\n",
+            icon, warning.field_name, warning.message
+        ));
     }
 
     output.pop(); // 移除最后的换行符
@@ -272,13 +279,11 @@ mod tests {
 
     #[test]
     fn test_format_warnings() {
-        let warnings = vec![
-            FieldWarning {
-                field_name: "custom_headers".to_string(),
-                level: WarningLevel::Warning,
-                message: "可能不被支持".to_string(),
-            },
-        ];
+        let warnings = vec![FieldWarning {
+            field_name: "custom_headers".to_string(),
+            level: WarningLevel::Warning,
+            message: "可能不被支持".to_string(),
+        }];
 
         let formatted = format_field_warnings(&warnings);
 

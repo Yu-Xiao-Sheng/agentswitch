@@ -40,7 +40,6 @@ impl AgentAdapter for GeminiAdapter {
         "gemini-cli"
     }
 
-
     fn detect(&self) -> Result<bool> {
         // 检查可执行文件是否存在（在 PATH 中）
         let in_path = which::which("gemini").is_ok();
@@ -65,15 +64,13 @@ impl AgentAdapter for GeminiAdapter {
             .join("backups")
             .join("gemini-cli");
 
-        std::fs::create_dir_all(&backup_dir)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(&backup_dir).context("Failed to create backup directory")?;
 
         let timestamp = chrono::Utc::now();
         let backup_filename = format!("backup-{}.json", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path)
-            .context("Failed to backup configuration")?;
+        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
 
         Ok(Backup {
             agent_name: self.name().to_string(),
@@ -87,16 +84,13 @@ impl AgentAdapter for GeminiAdapter {
         let config_dir = self.config_dir()?;
 
         // 创建配置目录（如果不存在）
-        fs::create_dir_all(&config_dir)
-            .context("创建配置目录失败")?;
+        fs::create_dir_all(&config_dir).context("创建配置目录失败")?;
 
         // 更新 settings.json
         let settings_path = config_dir.join("settings.json");
         let mut settings = if settings_path.exists() {
-            let content = fs::read_to_string(&settings_path)
-                .context("读取 settings.json 失败")?;
-            serde_json::from_str::<GeminiSettings>(&content)
-                .context("解析 settings.json 失败")?
+            let content = fs::read_to_string(&settings_path).context("读取 settings.json 失败")?;
+            serde_json::from_str::<GeminiSettings>(&content).context("解析 settings.json 失败")?
         } else {
             GeminiSettings::default()
         };
@@ -106,21 +100,17 @@ impl AgentAdapter for GeminiAdapter {
             model_id: Some(model_config.model_id.clone()),
         });
 
-        let content = serde_json::to_string_pretty(&settings)
-            .context("序列化 settings.json 失败")?;
-        fs::write(&settings_path, content)
-            .context("写入 settings.json 失败")?;
+        let content =
+            serde_json::to_string_pretty(&settings).context("序列化 settings.json 失败")?;
+        fs::write(&settings_path, content).context("写入 settings.json 失败")?;
 
         // 更新 .env 文件
         let env_path = config_dir.join(".env");
         let env_content = format!(
             "GOOGLE_GEMINI_BASE_URL={}\nGEMINI_API_KEY={}\nGEMINI_MODEL={}\n",
-            model_config.base_url,
-            model_config.api_key,
-            model_config.model_id
+            model_config.base_url, model_config.api_key, model_config.model_id
         );
-        fs::write(&env_path, env_content)
-            .context("写入 .env 失败")?;
+        fs::write(&env_path, env_content).context("写入 .env 失败")?;
 
         Ok(())
     }
@@ -138,14 +128,14 @@ impl AgentAdapter for GeminiAdapter {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&config_path)
-            .context("读取配置文件失败")?;
+        let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
 
-        let settings: GeminiSettings = serde_json::from_str(&content)
-            .context("解析配置文件失败")?;
+        let settings: GeminiSettings =
+            serde_json::from_str(&content).context("解析配置文件失败")?;
 
         // 从 defaultModel 读取模型 ID
-        Ok(settings.defaultModel
+        Ok(settings
+            .defaultModel
             .and_then(|m| m.model_id)
             .map(|s| s.to_string()))
     }

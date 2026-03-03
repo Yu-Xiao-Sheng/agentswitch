@@ -3,7 +3,7 @@
 //! 提供动态适配器注册和查询功能
 
 use crate::agents::AgentAdapter;
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -39,7 +39,9 @@ impl AdapterRegistry {
     /// registry.register("mytool", Box::new(MyToolAdapter::new()))?;
     /// ```
     pub fn register(&self, name: &str, adapter: Box<dyn AgentAdapter>) -> Result<()> {
-        let mut adapters = self.adapters.write()
+        let mut adapters = self
+            .adapters
+            .write()
             .map_err(|_| anyhow!("获取注册表写锁失败"))?;
 
         // 检查名称冲突
@@ -106,12 +108,11 @@ impl AdapterRegistry {
     /// # 返回
     /// 返回所有适配器名称和安装状态的列表
     pub fn list_adapters(&self) -> Vec<AdapterInfo> {
-        let adapters = self.adapters.read()
-            .unwrap_or_else(|_| {
-                // 如果获取读锁失败，尝试创建一个空的 HashMap
-                // 注意：这里只是临时解决方案，实际上应该处理错误
-                panic!("获取注册表读锁失败")
-            });
+        let adapters = self.adapters.read().unwrap_or_else(|_| {
+            // 如果获取读锁失败，尝试创建一个空的 HashMap
+            // 注意：这里只是临时解决方案，实际上应该处理错误
+            panic!("获取注册表读锁失败")
+        });
 
         adapters
             .iter()
@@ -136,14 +137,16 @@ impl AdapterRegistry {
     /// - `true`: 已注册
     /// - `false`: 未注册
     pub fn contains(&self, name: &str) -> bool {
-        self.adapters.read()
+        self.adapters
+            .read()
             .map(|adapters| adapters.contains_key(name))
             .unwrap_or(false)
     }
 
     /// 获取已注册适配器的数量
     pub fn count(&self) -> usize {
-        self.adapters.read()
+        self.adapters
+            .read()
             .map(|adapters| adapters.len())
             .unwrap_or(0)
     }
@@ -153,10 +156,10 @@ impl AdapterRegistry {
     /// # 返回
     /// 返回验证结果列表
     pub fn validate_all(&self) -> Vec<ValidationResult> {
-        let adapters = self.adapters.read()
-            .unwrap_or_else(|_| {
-                panic!("获取注册表读锁失败")
-            });
+        let adapters = self
+            .adapters
+            .read()
+            .unwrap_or_else(|_| panic!("获取注册表读锁失败"));
 
         let mut results = Vec::new();
 
@@ -265,9 +268,15 @@ pub fn global_registry() -> &'static AdapterRegistry {
         let registry = AdapterRegistry::new();
 
         // 自动注册内置适配器
-        let _ = registry.register("test-list", Box::new(crate::agents::claude_code::ClaudeCodeAdapter::new()));
+        let _ = registry.register(
+            "test-list",
+            Box::new(crate::agents::claude_code::ClaudeCodeAdapter::new()),
+        );
         let _ = registry.register("codex", Box::new(crate::agents::codex::CodexAdapter::new()));
-        let _ = registry.register("gemini-cli", Box::new(crate::agents::gemini::GeminiAdapter::new()));
+        let _ = registry.register(
+            "gemini-cli",
+            Box::new(crate::agents::gemini::GeminiAdapter::new()),
+        );
 
         registry
     })

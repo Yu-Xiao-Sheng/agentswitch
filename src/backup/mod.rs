@@ -1,4 +1,4 @@
 pub mod manager;
 
 #[allow(unused_imports)]
-pub use manager::{BackupManager, BackupInfo};
+pub use manager::{BackupInfo, BackupManager};

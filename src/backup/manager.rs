@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
 use chrono::Utc;
+use fs2::FileExt;
 use std::fs::{self, File};
 use std::path::{Path, PathBuf};
-use fs2::FileExt;
 
 use crate::agents::Backup;
 
@@ -33,8 +33,7 @@ impl BackupManager {
             .join("backups");
 
         // 创建备份目录
-        fs::create_dir_all(&backup_dir)
-            .context("创建备份目录失败")?;
+        fs::create_dir_all(&backup_dir).context("创建备份目录失败")?;
 
         Ok(Self {
             backup_dir,
@@ -77,8 +76,7 @@ impl BackupManager {
         let backup_dir = self.backup_dir.join(agent_name);
 
         // 创建工具特定的备份目录
-        fs::create_dir_all(&backup_dir)
-            .context("创建备份目录失败")?;
+        fs::create_dir_all(&backup_dir).context("创建备份目录失败")?;
 
         let backup_path = backup_dir.join(&backup_filename);
 
@@ -86,8 +84,7 @@ impl BackupManager {
         let _lock = self.acquire_lock()?;
 
         // 复制配置文件到备份位置
-        fs::copy(config_path, &backup_path)
-            .context("创建备份文件失败")?;
+        fs::copy(config_path, &backup_path).context("创建备份文件失败")?;
 
         // 设置备份文件权限为 0600
         #[cfg(unix)]
@@ -96,8 +93,7 @@ impl BackupManager {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = fs::metadata(&backup_path)?.permissions();
             perms.set_mode(0o600);
-            fs::set_permissions(&backup_path, perms)
-                .context("设置备份文件权限失败")?;
+            fs::set_permissions(&backup_path, perms).context("设置备份文件权限失败")?;
         }
 
         // 清理旧备份（保留最新的 max_per_agent 个）
@@ -125,7 +121,8 @@ impl BackupManager {
         if original_path.exists() {
             let timestamp = Utc::now().format("%Y%m%d-%H%M%S");
             let restore_backup_name = format!("restore-{}.bak", timestamp);
-            let restore_backup_path = self.backup_dir
+            let restore_backup_path = self
+                .backup_dir
                 .join(&backup.agent_name)
                 .join(&restore_backup_name);
 
@@ -133,8 +130,7 @@ impl BackupManager {
         }
 
         // 复制备份文件到原位置
-        fs::copy(&backup.backup_path, original_path)
-            .context("恢复配置文件失败")?;
+        fs::copy(&backup.backup_path, original_path).context("恢复配置文件失败")?;
 
         Ok(())
     }
@@ -145,8 +141,7 @@ impl BackupManager {
     /// - `older_than`: 备份文件的最长保留时间（秒）
     pub fn clean_old_backups_by_duration(&self, older_seconds: i64) -> Result<usize> {
         let now = Utc::now();
-        let entries = fs::read_dir(&self.backup_dir)
-            .context("读取备份目录失败")?;
+        let entries = fs::read_dir(&self.backup_dir).context("读取备份目录失败")?;
 
         let mut cleaned_count = 0;
 
@@ -179,14 +174,14 @@ impl BackupManager {
             return Ok(backups);
         }
 
-        let entries = fs::read_dir(&self.backup_dir)
-            .context("读取备份目录失败")?;
+        let entries = fs::read_dir(&self.backup_dir).context("读取备份目录失败")?;
 
         for entry in entries.flatten() {
             let agent_dir = entry.path();
 
             if agent_dir.is_dir() {
-                let agent_name = agent_dir.file_name()
+                let agent_name = agent_dir
+                    .file_name()
                     .and_then(|n| n.to_str())
                     .unwrap_or("unknown");
 
@@ -194,14 +189,19 @@ impl BackupManager {
                     for entry in entries.flatten() {
                         let path = entry.path();
 
-                        if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("json") ||
-                           path.extension().and_then(|s| s.to_str()) == Some("toml") {
+                        if path.is_file()
+                            && path.extension().and_then(|s| s.to_str()) == Some("json")
+                            || path.extension().and_then(|s| s.to_str()) == Some("toml")
+                        {
                             if let Ok(metadata) = fs::metadata(&path) {
                                 if let Ok(modified) = metadata.modified() {
-                                    let modified_time: chrono::DateTime<chrono::Utc> = modified.into();
+                                    let modified_time: chrono::DateTime<chrono::Utc> =
+                                        modified.into();
                                     backups.push(BackupInfo {
                                         agent_name: agent_name.to_string(),
-                                        timestamp: modified_time.format("%Y-%m-%d %H:%M:%S").to_string(),
+                                        timestamp: modified_time
+                                            .format("%Y-%m-%d %H:%M:%S")
+                                            .to_string(),
                                         file_path: path.clone(),
                                         size_bytes: metadata.len(),
                                     });
@@ -227,16 +227,13 @@ impl BackupManager {
             anyhow::bail!("未找到 {} 的备份", agent);
         }
 
-        let entries = fs::read_dir(&agent_dir)
-            .context("读取备份目录失败")?;
+        let entries = fs::read_dir(&agent_dir).context("读取备份目录失败")?;
 
         for entry in entries.flatten() {
             let path = entry.path();
 
             if path.is_file() {
-                let filename = path.file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("");
+                let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                 if filename.contains(timestamp) {
                     let modified = fs::metadata(&path)?.modified()?;
@@ -313,11 +310,11 @@ impl BackupManager {
     /// 获取文件锁
     fn acquire_lock(&self) -> Result<File> {
         let lock_path = self.backup_dir.join(".lock");
-        let file = File::create(&lock_path)
-            .context("创建锁文件失败")?;
+        let file = File::create(&lock_path).context("创建锁文件失败")?;
 
         // 尝试获取独占锁
-        let _try_lock = file.try_lock_exclusive()
+        let _try_lock = file
+            .try_lock_exclusive()
             .context("获取文件锁失败，可能有其他进程正在操作")?;
 
         Ok(file)

@@ -102,12 +102,8 @@ impl BackupCommands {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
             BackupCommands::List => execute_list_backups(),
-            BackupCommands::Restore { agent, backup } => {
-                execute_restore_backup(agent, backup)
-            }
-            BackupCommands::Clean { older_than } => {
-                execute_clean_backups(older_than)
-            }
+            BackupCommands::Restore { agent, backup } => execute_restore_backup(agent, backup),
+            BackupCommands::Clean { older_than } => execute_clean_backups(older_than),
         }
     }
 }
@@ -240,7 +236,10 @@ fn execute_detect_agents() -> anyhow::Result<()> {
         println!();
     }
 
-    println!("{}", "提示: 使用 'asw switch <agent> <model>' 切换工具的模型配置".cyan());
+    println!(
+        "{}",
+        "提示: 使用 'asw switch <agent> <model>' 切换工具的模型配置".cyan()
+    );
 
     Ok(())
 }
@@ -260,7 +259,14 @@ fn execute_list_backups() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    println!("{}", format!("{:<20} {:<20} {:<10} {}", "Agent", "Timestamp", "Size", "Path").cyan());
+    println!(
+        "{}",
+        format!(
+            "{:<20} {:<20} {:<10} {}",
+            "Agent", "Timestamp", "Size", "Path"
+        )
+        .cyan()
+    );
     println!("{}", "-".repeat(80));
 
     for backup in backups {
@@ -272,7 +278,8 @@ fn execute_list_backups() -> anyhow::Result<()> {
             format!("{} MB", backup.size_bytes / (1024 * 1024))
         };
 
-        println!("{:<20} {:<20} {:<10} {}",
+        println!(
+            "{:<20} {:<20} {:<10} {}",
             backup.agent_name,
             backup.timestamp,
             size_str,
@@ -301,7 +308,10 @@ fn execute_restore_backup(agent: &str, backup: &str) -> anyhow::Result<()> {
     // 执行恢复
     adapter.restore(&backup_info)?;
 
-    println!("{}", format!("✓ 已恢复 {} 到 {} 的备份", agent, backup).green());
+    println!(
+        "{}",
+        format!("✓ 已恢复 {} 到 {} 的备份", agent, backup).green()
+    );
 
     Ok(())
 }
@@ -335,7 +345,8 @@ fn parse_duration(duration: &str) -> anyhow::Result<i64> {
     let num_str: String = chars[..split_pos].iter().collect();
     let unit: String = chars[split_pos..].iter().collect();
 
-    let num: i64 = num_str.parse()
+    let num: i64 = num_str
+        .parse()
         .map_err(|_| anyhow::anyhow!("时间间隔格式错误"))?;
 
     let seconds = match unit.as_str() {
@@ -384,14 +395,23 @@ pub fn execute_show_status() -> anyhow::Result<()> {
             }
         });
 
-        println!("{:<20} {:<15} {:<40} {}", name.bold(), model_text, config_path.display().to_string(), status);
+        println!(
+            "{:<20} {:<15} {:<40} {}",
+            name.bold(),
+            model_text,
+            config_path.display().to_string(),
+            status
+        );
     }
 
     println!();
     println!("{}", "Legend:".cyan());
     println!("  ✓ = 已配置  ⚠ = 未配置  ✗ = 未安装");
     println!();
-    println!("{}", "提示: 使用 'asw switch <agent> <model>' 配置工具".cyan());
+    println!(
+        "{}",
+        "提示: 使用 'asw switch <agent> <model>' 配置工具".cyan()
+    );
 
     Ok(())
 }
@@ -430,7 +450,10 @@ pub fn execute_switch(agent: &str, model: &str) -> anyhow::Result<()> {
     }
 
     // 步骤 2: 应用新配置
-    println!("{}", format!("正在切换 {} 到 {} 模型...", agent, model).cyan());
+    println!(
+        "{}",
+        format!("正在切换 {} 到 {} 模型...", agent, model).cyan()
+    );
     adapter.apply(&model_config)?;
     println!("{}", format!("✓ {} 已切换到 {} 模型", agent, model).green());
 
@@ -465,7 +488,10 @@ fn execute_list_adapters() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    println!("{}", format!("{:<25} {:<15}", "适配器名称", "安装状态").cyan());
+    println!(
+        "{}",
+        format!("{:<25} {:<15}", "适配器名称", "安装状态").cyan()
+    );
     println!("{}", "-".repeat(40));
 
     for adapter_info in adapters {

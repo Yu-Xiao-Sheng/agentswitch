@@ -23,7 +23,6 @@ impl AgentAdapter for GrokAdapter {
         "grok"
     }
 
-
     fn detect(&self) -> Result<bool> {
         let config_dir = self.config_dir()?;
         Ok(config_dir.exists() && config_dir.join("config.toml").exists())
@@ -41,15 +40,13 @@ impl AgentAdapter for GrokAdapter {
             .join("backups")
             .join("grok");
 
-        std::fs::create_dir_all(&backup_dir)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(&backup_dir).context("Failed to create backup directory")?;
 
         let timestamp = chrono::Utc::now();
         let backup_filename = format!("backup-{}.toml", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path)
-            .context("Failed to backup configuration")?;
+        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
 
         Ok(Backup {
             agent_name: self.name().to_string(),
