@@ -190,9 +190,10 @@ impl BackupManager {
                         let path = entry.path();
 
                         if path.is_file()
-                            && path.extension().and_then(|s| s.to_str()) == Some("json")
-                            || path.extension().and_then(|s| s.to_str()) == Some("toml")
+                            && (path.extension().and_then(|s| s.to_str()) == Some("json")
+                                || path.extension().and_then(|s| s.to_str()) == Some("toml"))
                         {
+                            #[allow(clippy::collapsible_if)]
                             if let Ok(metadata) = fs::metadata(&path) {
                                 if let Ok(modified) = metadata.modified() {
                                     let modified_time: chrono::DateTime<chrono::Utc> =
@@ -313,6 +314,7 @@ impl BackupManager {
         let file = File::create(&lock_path).context("创建锁文件失败")?;
 
         // 尝试获取独占锁
+        #[allow(clippy::let_unit_value)]
         let _try_lock = file
             .try_lock_exclusive()
             .context("获取文件锁失败，可能有其他进程正在操作")?;

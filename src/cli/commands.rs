@@ -283,7 +283,7 @@ fn execute_list_backups() -> anyhow::Result<()> {
             backup.agent_name,
             backup.timestamp,
             size_str,
-            backup.file_path.display().to_string()
+            backup.file_path.display()
         );
     }
 
@@ -293,7 +293,7 @@ fn execute_list_backups() -> anyhow::Result<()> {
 /// 执行 backup restore 命令
 fn execute_restore_backup(agent: &str, backup: &str) -> anyhow::Result<()> {
     println!("{}", "正在恢复配置...".cyan());
-    println!("{}", format!("Agent: {}, Backup: {}", agent, backup));
+    println!("Agent: {}, Backup: {}", agent, backup);
 
     let backup_manager = BackupManager::new()?;
     let backup_info = backup_manager.find_backup(agent, backup)?;
@@ -319,7 +319,7 @@ fn execute_restore_backup(agent: &str, backup: &str) -> anyhow::Result<()> {
 /// 执行 backup clean 命令
 fn execute_clean_backups(older_than: &str) -> anyhow::Result<()> {
     println!("{}", "正在清理旧备份...".cyan());
-    println!("{}", format!("清理 {} 前的备份", older_than));
+    println!("清理 {} 前的备份", older_than);
 
     // 解析时间间隔
     let seconds = parse_duration(older_than)?;
