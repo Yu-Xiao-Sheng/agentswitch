@@ -4,8 +4,19 @@ pub mod codex;
 pub mod gemini;
 pub mod qwen;
 pub mod grok;
+pub mod registry;
 
-pub use adapter::AgentAdapter;
+pub use adapter::{
+    AgentAdapter,
+    Backup,
+};
+
+pub use registry::{
+    AdapterRegistry,
+    AdapterInfo,
+    ValidationResult,
+    global_registry,
+};
 
 /// Get all available agent adapters
 pub fn all_adapters() -> Vec<Box<dyn AgentAdapter>> {

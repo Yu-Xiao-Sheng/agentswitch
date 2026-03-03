@@ -23,9 +23,6 @@ impl AgentAdapter for GrokAdapter {
         "grok"
     }
 
-    fn display_name(&self) -> &str {
-        "Grok CLI"
-    }
 
     fn detect(&self) -> Result<bool> {
         let config_dir = self.config_dir()?;

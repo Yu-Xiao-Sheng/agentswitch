@@ -23,9 +23,6 @@ impl AgentAdapter for QwenAdapter {
         "qwen"
     }
 
-    fn display_name(&self) -> &str {
-        "Qwen CLI"
-    }
 
     fn detect(&self) -> Result<bool> {
         let config_dir = self.config_dir()?;

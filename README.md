@@ -31,7 +31,7 @@
 - `~/.gemini-cli/config.yaml`
 - 其他工具的配置文件
 
-### 3. 配置切换与对比（计划中）
+### 3. 配置切换与对比 ✅ (已完成 - v0.2.0)
 快速在不同工具间切换模型配置，方便对比不同模型在同一工具下的表现：
 ```bash
 # 将 Codex 切换到 GLM-4
@@ -41,8 +41,18 @@ asw switch codex glm-4
 asw switch claude-code minimax
 ```
 
-### 4. 配置文件备份与恢复（计划中）
-在修改配置前自动备份原配置，支持一键恢复。
+### 4. 配置文件备份与恢复 ✅ (已完成 - v0.2.0)
+在修改配置前自动备份原配置，支持一键恢复：
+```bash
+# 查看所有备份
+asw backup list
+
+# 恢复备份
+asw backup restore claude-code --backup 20260227-101533
+
+# 清理旧备份
+asw backup clean --older-than 7d
+```
 
 ## 🗺️ 项目蓝图
 
@@ -69,28 +79,32 @@ asw switch claude-code minimax
 - [x] **删除模型配置** (`asw model remove`)
 - [x] **编辑模型配置** (`asw model edit`)
 
-### Phase 3: Agent 工具适配器 (P1 - 计划中)
-- [ ] **适配器接口设计**
-  - [ ] 定义统一的 `AgentAdapter` trait
-  - [ ] 方法：`detect()`, `backup()`, `apply()`, `restore()`
-- [ ] **Claude Code 适配器**
-  - [ ] 检测安装路径
-  - [ ] 解析/修改配置文件
-- [ ] **Codex 适配器**
-  - [ ] TOML 配置解析
-  - [ ] 配置项映射
-- [ ] **Gemini CLI 适配器**
-  - [ ] YAML 配置解析
-- [ ] **其他工具适配器** (Qwen, Grok, OpenCode 等)
+### Phase 3: Agent 工具适配器 ✅ (已完成 - v0.2.0)
+- [x] **适配器接口设计**
+  - [x] 定义统一的 `AgentAdapter` trait
+  - [x] 方法：`detect()`, `backup()`, `apply()`, `restore()`, `current_model()`
+- [x] **Claude Code 适配器**
+  - [x] 检测安装路径
+  - [x] 解析/修改配置文件
+- [x] **Codex 适配器**
+  - [x] TOML + JSON 配置解析
+  - [x] 配置项映射
+- [x] **Gemini CLI 适配器**
+  - [x] JSON + .env 配置解析
+- [x] **其他工具适配器** (Qwen, Grok)
 
-### Phase 4: 配置切换功能 (P1)
-- [ ] **切换命令** (`asw switch <agent> <model>`)
-  - [ ] 自动备份原配置
-  - [ ] 应用新配置
-  - [ ] 验证配置生效
-- [ ] **状态显示** (`asw status`)
-  - [ ] 显示所有工具当前使用的模型
-  - [ ] 显示配置文件路径
+### Phase 4: 配置切换功能 ✅ (已完成 - v0.2.0)
+- [x] **切换命令** (`asw switch <agent> <model>`)
+  - [x] 自动备份原配置
+  - [x] 应用新配置
+  - [x] 环境变量警告
+- [x] **状态显示** (`asw status`)
+  - [x] 显示所有工具当前使用的模型
+  - [x] 显示配置文件路径
+- [x] **备份管理**
+  - [x] `asw backup list` - 列出所有备份
+  - [x] `asw backup restore` - 恢复备份
+  - [x] `asw backup clean` - 清理旧备份
 
 ### Phase 5: 高级功能 (P2)
 - [ ] **配置预设** (Presets)

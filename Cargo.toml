@@ -19,12 +19,14 @@ toml = "0.8"
 
 # 错误处理
 anyhow = "1.0"
+thiserror = "1.0"
 
 # 彩色输出
 colored = "2.1"
 
 # 路径处理
 dirs = "5.0"
+which = "6.0"
 
 # URL 验证
 url = "2.5"
@@ -32,5 +34,12 @@ url = "2.5"
 # 表格输出
 comfy-table = "7.1"
 
+# 文件锁
+fs2 = "0.4"
+
+# 时间处理
+chrono = { version = "0.4", features = ["serde"] }
+
 [dev-dependencies]
 # 测试依赖
+tempfile = "3.10"
