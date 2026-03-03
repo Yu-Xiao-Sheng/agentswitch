@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 
 pub mod commands;
 
-pub use commands::ModelCommands;
+pub use commands::{AgentCommands, BackupCommands, ModelCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]
@@ -22,10 +22,26 @@ pub enum Command {
     #[command(subcommand)]
     Model(ModelCommands),
 
+    /// Agent tool management
+    #[command(subcommand)]
+    Agent(AgentCommands),
+
+    /// Backup management
+    #[command(subcommand)]
+    Backup(BackupCommands),
+
     /// Show current configuration status
     Status {
         #[arg(long, short)]
         detailed: bool,
+    },
+
+    /// Switch agent tool to a different model
+    Switch {
+        /// Agent name (e.g., claude-code, codex, gemini-cli)
+        agent: String,
+        /// Model configuration name
+        model: String,
     },
 }
 
@@ -33,14 +49,10 @@ impl Command {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
             Command::Model(cmd) => cmd.run(),
-            Command::Status { detailed } => {
-                if *detailed {
-                    println!("详细状态信息...");
-                } else {
-                    println!("当前状态信息...");
-                }
-                Ok(())
-            }
+            Command::Agent(cmd) => cmd.run(),
+            Command::Backup(cmd) => cmd.run(),
+            Command::Status { detailed: _ } => commands::execute_show_status(),
+            Command::Switch { agent, model } => commands::execute_switch(agent, model),
         }
     }
 }

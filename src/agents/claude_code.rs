@@ -1,7 +1,24 @@
 use crate::agents::adapter::{AgentAdapter, Backup};
 use crate::config::ModelConfig;
 use anyhow::{Context, Result};
+use serde_json::json;
+use std::fs;
 use std::path::PathBuf;
+
+/// Claude Code 配置文件结构
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+struct ClaudeCodeConfig {
+    #[serde(default)]
+    env: serde_json::Map<String, serde_json::Value>,
+}
+
+impl Default for ClaudeCodeConfig {
+    fn default() -> Self {
+        Self {
+            env: serde_json::Map::new(),
+        }
+    }
+}
 
 /// Adapter for Claude Code (Anthropic's official CLI tool)
 pub struct ClaudeCodeAdapter;
@@ -23,18 +40,20 @@ impl AgentAdapter for ClaudeCodeAdapter {
         "claude-code"
     }
 
-    fn display_name(&self) -> &str {
-        "Claude Code"
-    }
-
     fn detect(&self) -> Result<bool> {
-        // Check if Claude Code is installed and configured
-        let config_dir = self.config_dir()?;
-        Ok(config_dir.exists() && config_dir.join("config.json").exists())
+        // 检查可执行文件是否存在（在 PATH 中）
+        let in_path = which::which("claude-code").is_ok();
+
+        // 检查配置文件是否存在
+        let config_path = self.config_path();
+        let has_config = config_path.is_ok() && config_path.unwrap().exists();
+
+        Ok(in_path || has_config)
     }
 
     fn config_path(&self) -> Result<PathBuf> {
-        Ok(self.config_dir()?.join("config.json"))
+        // Claude Code 使用 ~/.claude/settings.json
+        Ok(self.config_dir()?.join("settings.json"))
     }
 
     fn backup(&self) -> Result<Backup> {
@@ -45,15 +64,13 @@ impl AgentAdapter for ClaudeCodeAdapter {
             .join("backups")
             .join("claude-code");
 
-        std::fs::create_dir_all(&backup_dir)
-            .context("Failed to create backup directory")?;
+        std::fs::create_dir_all(&backup_dir).context("Failed to create backup directory")?;
 
         let timestamp = chrono::Utc::now();
         let backup_filename = format!("backup-{}.json", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path)
-            .context("Failed to backup configuration")?;
+        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
 
         Ok(Backup {
             agent_name: self.name().to_string(),
@@ -63,10 +80,38 @@ impl AgentAdapter for ClaudeCodeAdapter {
         })
     }
 
-    fn apply(&self, _model_config: &ModelConfig) -> Result<()> {
-        // TODO: Implement configuration modification
-        // Need to parse Claude Code's config.json and modify the appropriate fields
-        anyhow::bail!("Not implemented yet")
+    fn apply(&self, model_config: &ModelConfig) -> Result<()> {
+        let config_path = self.config_path()?;
+
+        // 读取或创建配置文件
+        let mut config = if config_path.exists() {
+            let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
+            serde_json::from_str::<ClaudeCodeConfig>(&content).context("解析配置文件失败")?
+        } else {
+            // 配置文件不存在，创建默认配置
+            ClaudeCodeConfig::default()
+        };
+
+        // 应用模型配置到 env 字段
+        config.env.insert(
+            "ANTHROPIC_AUTH_TOKEN".to_string(),
+            json!(model_config.api_key.clone()),
+        );
+        config.env.insert(
+            "ANTHROPIC_BASE_URL".to_string(),
+            json!(model_config.base_url.clone()),
+        );
+        config.env.insert(
+            "ANTHROPIC_MODEL".to_string(),
+            json!(model_config.model_id.clone()),
+        );
+
+        // 写回配置文件
+        let content = serde_json::to_string_pretty(&config).context("序列化配置失败")?;
+
+        fs::write(&config_path, content).context("写入配置文件失败")?;
+
+        Ok(())
     }
 
     fn restore(&self, backup: &Backup) -> Result<()> {
@@ -76,7 +121,22 @@ impl AgentAdapter for ClaudeCodeAdapter {
     }
 
     fn current_model(&self) -> Result<Option<String>> {
-        // TODO: Read current model from config
-        Ok(None)
+        let config_path = self.config_path()?;
+
+        if !config_path.exists() {
+            return Ok(None);
+        }
+
+        let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
+
+        let config: ClaudeCodeConfig =
+            serde_json::from_str(&content).context("解析配置文件失败")?;
+
+        // 从 env 字段读取模型 ID
+        Ok(config
+            .env
+            .get("ANTHROPIC_MODEL")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()))
     }
 }

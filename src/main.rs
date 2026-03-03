@@ -1,8 +1,11 @@
 use anyhow::Result;
 use clap::Parser;
 
+mod agents;
+mod backup;
 mod cli;
 mod config;
+mod error;
 mod output;
 mod utils;
 

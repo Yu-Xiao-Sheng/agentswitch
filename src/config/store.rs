@@ -154,6 +154,29 @@ impl ConfigStore {
         self.config.edit_model(name, updater)?;
         self.save()
     }
+
+    /// 获取所有激活的模型映射（agent_name -> model_name）
+    pub fn get_all_active_models(&self) -> &std::collections::HashMap<String, String> {
+        &self.config.active_models
+    }
+
+    /// 更新指定 agent 的激活模型
+    pub fn update_active_model(
+        &mut self,
+        agent_name: &str,
+        model_name: &str,
+    ) -> anyhow::Result<()> {
+        self.config
+            .active_models
+            .insert(agent_name.to_string(), model_name.to_string());
+        self.save()
+    }
+
+    /// 获取指定 agent 的激活模型
+    #[allow(dead_code)]
+    pub fn get_active_model(&self, agent_name: &str) -> Option<&String> {
+        self.config.active_models.get(agent_name)
+    }
 }
 
 #[cfg(test)]
