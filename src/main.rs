@@ -3,10 +3,13 @@ use clap::Parser;
 
 mod agents;
 mod backup;
+mod batch;
 mod cli;
 mod config;
 mod error;
+mod io;
 mod output;
+mod presets;
 mod utils;
 
 use cli::Cli;

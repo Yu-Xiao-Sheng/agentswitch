@@ -2,8 +2,10 @@
 
 use clap::{Parser, Subcommand};
 
+pub mod args;
 pub mod commands;
 
+pub use args::{BatchCommands, PresetCommands};
 pub use commands::{AgentCommands, BackupCommands, ModelCommands};
 
 /// AgentSwitch CLI
@@ -30,6 +32,14 @@ pub enum Command {
     #[command(subcommand)]
     Backup(BackupCommands),
 
+    /// Preset management
+    #[command(subcommand)]
+    Preset(PresetCommands),
+
+    /// Batch operations
+    #[command(subcommand)]
+    Batch(BatchCommands),
+
     /// Show current configuration status
     Status {
         #[arg(long, short)]
@@ -51,6 +61,8 @@ impl Command {
             Command::Model(cmd) => cmd.run(),
             Command::Agent(cmd) => cmd.run(),
             Command::Backup(cmd) => cmd.run(),
+            Command::Preset(cmd) => cmd.run(),
+            Command::Batch(cmd) => cmd.run(),
             Command::Status { detailed: _ } => commands::execute_show_status(),
             Command::Switch { agent, model } => commands::execute_switch(agent, model),
         }

@@ -37,6 +37,9 @@ comfy-table = "7.1"
 # 文件锁
 fs2 = "0.4"
 
+# 并发处理
+rayon = "1.10"
+
 # 时间处理
 chrono = { version = "0.4", features = ["serde"] }
 
