@@ -24,12 +24,13 @@
 - 支持添加、编辑、删除模型提供商配置
 - 安全地存储 API Key 和配置信息
 
-### 2. Code Agent 工具支持（计划中）
+### 2. Code Agent 工具支持 ✅ (已完成 - v0.2.0)
 自动检测并适配已安装的 Code Agent 工具，修改其配置文件以使用指定的模型：
-- `~/.codex/config.toml`
-- `~/.claude/config.json`
-- `~/.gemini-cli/config.yaml`
-- 其他工具的配置文件
+- Claude Code (`~/.claude/config.json`)
+- Codex (`~/.codex/config.toml`)
+- Gemini CLI (`~/.gemini-cli/config.yaml`)
+- Qwen CLI (`~/.qwen-cli/config.json`)
+- Grok CLI (`~/.grok-cli/config.toml`)
 
 ### 3. 配置切换与对比 ✅ (已完成 - v0.2.0)
 快速在不同工具间切换模型配置，方便对比不同模型在同一工具下的表现：
@@ -52,6 +53,81 @@ asw backup restore claude-code --backup 20260227-101533
 
 # 清理旧备份
 asw backup clean --older-than 7d
+```
+
+### 5. 配置预设管理 ✅ (已完成 - v0.3.0)
+保存常用的配置组合，一键应用预设配置：
+```bash
+# 保存当前配置为预设
+asw preset save my-work --tags "daily,llm" --agents "claude-code:glm,codex:glm-4"
+
+# 列出所有预设
+asw preset list
+
+# 应用预设
+asw preset apply my-work
+
+# 验证预设
+asw preset validate my-work
+```
+
+### 6. 批量操作 ✅ (已完成 - v0.3.0)
+同时切换多个工具到同一模型：
+```bash
+# 批量切换所有工具到 GLM-4
+asw batch switch glm-4
+
+# 批量验证配置
+asw batch validate
+```
+
+### 7. 交互式配置向导 ✅ (已完成 - v0.4.0)
+友好的 CLI 交互式向导，引导新用户完成初始化配置：
+```bash
+# 启动向导
+asw wizard init
+
+# 恢复向导进度
+asw wizard init --resume
+
+# 重新开始
+asw wizard init --reset
+```
+
+### 8. 工具诊断 ✅ (已完成 - v0.4.0)
+自动检测系统中已安装的 Code Agent 工具：
+```bash
+# 运行完整诊断
+asw doctor
+
+# 检测已安装工具（简化版）
+asw doctor detect
+```
+
+### 9. Shell 自动补全 ✅ (已完成 - v0.4.0)
+为 Bash、Zsh、Fish 提供智能补全：
+```bash
+# 安装补全
+asw completion install bash
+
+# 生成补全脚本
+asw completion generate bash > /tmp/bash_completion.sh
+```
+
+### 10. 配置同步 (Git) ✅ (已完成 - v0.4.0)
+通过 Git 同步配置，支持多机器配置共享：
+```bash
+# 初始化 Git 仓库
+asw sync init
+
+# 推送到远程
+asw sync push
+
+# 从远程拉取
+asw sync pull
+
+# 查看同步状态
+asw sync status
 ```
 
 ## 🗺️ 项目蓝图
@@ -106,29 +182,29 @@ asw backup clean --older-than 7d
   - [x] `asw backup restore` - 恢复备份
   - [x] `asw backup clean` - 清理旧备份
 
-### Phase 5: 高级功能 (P2)
-- [ ] **配置预设** (Presets)
-  - [ ] 保存常用的配置组合
-  - [ ] 一键应用预设配置
-- [ ] **批量切换**
-  - [ ] 同时切换多个工具到同一模型
-- [ ] **配置导入/导出**
-  - [ ] 支持配置文件的分享和迁移
+### Phase 5: 高级功能 ✅ (已完成 - v0.3.0)
+- [x] **配置预设** (Presets)
+  - [x] 保存常用的配置组合
+  - [x] 一键应用预设配置
+- [x] **批量切换**
+  - [x] 同时切换多个工具到同一模型
+- [x] **配置导入/导出**
+  - [x] 支持配置文件的分享和迁移
 - [ ] **自动更新检测**
   - [ ] 检测新版本
   - [ ] 支持配置迁移
 
-### Phase 6: 用户体验优化 (P2)
-- [ ] **交互式配置向导**
-- [ ] **自动发现已安装的 Agent 工具**
-- [ ] **配置验证与错误提示**
-- [ ] **Shell 自动补全** (Bash/Zsh/Fish)
-- [ ] **丰富的文档和示例**
+### Phase 6: 用户体验优化 ✅ (已完成 - v0.4.0)
+- [x] **交互式配置向导**
+- [x] **自动发现已安装的 Agent 工具**
+- [x] **配置验证与错误提示**
+- [x] **Shell 自动补全** (Bash/Zsh/Fish)
+- [x] **丰富的文档和示例**
 
-### Phase 7: 扩展功能 (P3)
-- [ ] **配置同步**
-  - [ ] 通过 Git 同步配置
-  - [ ] 多机器配置共享
+### Phase 7: 扩展功能 (部分完成 - v0.4.0)
+- [x] **配置同步** ✅ (已完成 - v0.4.0)
+  - [x] 通过 Git 同步配置
+  - [x] 多机器配置共享
 - [ ] **性能测试模式**
   - [ ] 在不同模型上运行相同的测试用例
   - [ ] 生成对比报告
@@ -192,34 +268,52 @@ asw model remove glm
 
 ## 📋 命令参考
 
-### 当前可用命令（v0.1.0）
+### 当前可用命令（v0.4.0）
 ```
 asw
-└── model             # 模型配置管理
-    ├── add          # 添加模型配置
-    ├── list         # 列出所有模型
-    ├── remove       # 删除模型配置
-    └── edit         # 编辑模型配置
-```
-
-### 计划中的命令
-```
-asw
-├── init              # 初始化配置（现已自动初始化）
 ├── model             # 模型配置管理
-├── agent             # Agent 工具管理
-│   ├── list         # 列出已安装的工具
-│   └── detect       # 检测工具安装状态
+│   ├── add          # 添加模型配置
+│   ├── list         # 列出所有模型
+│   ├── remove       # 删除模型配置
+│   └── edit         # 编辑模型配置
 ├── switch            # 切换工具的模型配置
 ├── status            # 显示当前配置状态
 ├── backup            # 配置备份管理
 │   ├── list         # 列出备份
 │   ├── restore      # 恢复备份
 │   └── clean        # 清理旧备份
-└── preset            # 配置预设管理
-    ├── save         # 保存当前配置为预设
-    ├── list         # 列出所有预设
-    └── apply        # 应用预设配置
+├── preset            # 配置预设管理
+│   ├── save         # 保存当前配置为预设
+│   ├── list         # 列出所有预设
+│   ├── apply        # 应用预设配置
+│   ├── remove       # 删除预设
+│   └── validate     # 验证预设
+├── batch             # 批量操作
+│   ├── switch       # 批量切换所有工具
+│   └── validate     # 批量验证配置
+├── wizard            # 交互式向导
+│   └── init         # 初始化向导
+├── doctor            # 工具诊断
+│   └── detect       # 检测已安装工具
+├── completion        # Shell 自动补全
+│   ├── generate     # 生成补全脚本
+│   └── install      # 安装补全脚本
+└── sync              # Git 同步
+    ├── init         # 初始化 Git 仓库
+    ├── status       # 查看同步状态
+    ├── push         # 推送到远程
+    └── pull         # 从远程拉取
+```
+
+### 计划中的命令
+```
+asw
+├── update            # 检测并安装新版本
+├── benchmark         # 性能测试模式
+│   ├── run          # 运行性能测试
+│   └── report       # 生成对比报告
+└── web               # Web Dashboard（可选）
+    └── serve        # 启动 Web 界面
 ```
 
 ## 🛠️ 技术架构
@@ -301,6 +395,29 @@ cargo run -- model list
 ```
 
 ## 📊 版本历史
+
+### v0.4.0 (2026-03-11)
+- ✨ **交互式配置向导** - 友好的 CLI 向导引导用户完成初始化配置
+- ✨ **工具自动检测** - 自动发现已安装的 Code Agent 工具
+- ✨ **Shell 自动补全** - 支持 Bash、Zsh、Fish 智能补全
+- ✨ **Git 配置同步** - 支持多机器配置共享和版本控制
+- ✅ 完成所有 Spec 004 用户体验优化功能
+- ✅ 配置文件加密存储 API Key
+- ✅ 增强的错误提示和配置验证
+
+### v0.3.0 (2026-03-05)
+- ✨ **配置预设管理** - 保存和一键应用常用配置组合
+- ✨ **批量操作** - 同时切换多个工具到同一模型
+- ✅ 完成所有 Spec 003 高级功能
+- ✅ 预设标签系统便于管理
+- ✅ 批量配置验证
+
+### v0.2.0 (2026-03-01)
+- ✨ **Agent 工具适配器系统** - 支持多个 Code Agent 工具
+- ✨ **配置切换功能** - 快速在不同工具间切换模型
+- ✨ **备份管理系统** - 自动备份和恢复配置
+- ✅ 完成 Spec 002 Agent Adapter System
+- ✅ 支持 Claude Code、Codex、Gemini CLI、Qwen CLI、Grok CLI
 
 ### v0.1.0 (2026-02-27)
 - ✨ 首次发布

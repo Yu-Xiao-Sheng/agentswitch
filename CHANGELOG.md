@@ -10,6 +10,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 不兼容字段检测和警告功能
 
+## [0.4.0] - 2026-03-11
+
+### Added
+- ✨ **交互式配置向导**: 友好的 CLI 向导引导用户完成初始化配置
+  - `asw wizard init` - 启动初始化向导
+  - 支持进度保存和恢复 (`--resume`)
+  - 支持重新开始 (`--reset`)
+  - 步骤式引导：欢迎页面、工具检测、模型配置、配置验证
+- ✨ **工具诊断功能**: 自动检测系统中已安装的 Code Agent 工具
+  - `asw doctor` - 运行完整诊断（工具检测、配置检查、健康检查）
+  - `asw doctor detect` - 简化版工具检测
+  - 支持的工具：Claude Code、Codex、Gemini CLI、Qwen CLI、Grok CLI
+  - 详细的诊断报告（安装状态、配置文件路径、健康状态）
+- ✨ **Shell 自动补全**: 为 Bash、Zsh、Fish 提供智能补全
+  - `asw completion generate` - 生成补全脚本
+  - `asw completion install` - 一键安装补全脚本
+  - 支持命令、子命令、参数的智能补全
+  - 支持动态补全（模型名称、工具名称、预设名称等）
+- ✨ **Git 配置同步**: 支持多机器配置共享和版本控制
+  - `asw sync init` - 初始化 Git 仓库
+  - `asw sync status` - 查看同步状态
+  - `asw sync push` - 推送到远程仓库
+  - `asw sync pull` - 从远程仓库拉取更新
+  - 自动 `.gitignore` 配置（忽略敏感信息）
+  - API Key 加密存储（AES-256-GCM + Argon2）
+  - 支持冲突解决策略
+
+### Changed
+- 🔄 改进错误提示和配置验证
+- 🔄 优化用户体验，提供更友好的交互式界面
+
+### Fixed
+- 🐛 修复向导状态文件序列化问题
+- 🐛 修复补全脚本生成时的动态内容问题
+
+### Security
+- 🔒 API Key 加密存储（AES-256-GCM + Argon2id）
+- 🔒 自动生成加密密钥并安全存储
+- 🔒 Git 同步时自动忽略未加密的敏感信息
+
+### Developer Experience
+- 📚 完善的向导和诊断模块文档
+- 🧪 增加单元测试覆盖率
+- ✅ 完成 Spec 004 所有功能
+
+## [0.3.0] - 2026-03-05
+
+### Added
+- ✨ **配置预设管理**: 保存和一键应用常用配置组合
+  - `asw preset save` - 保存当前配置为预设
+  - `asw preset list` - 列出所有预设
+  - `asw preset apply` - 应用预设配置
+  - `asw preset remove` - 删除预设
+  - `asw preset validate` - 验证预设
+  - 支持预设标签系统（便于分类和搜索）
+  - 预设文件独立存储（`~/.agentswitch/presets/`）
+- ✨ **批量操作**: 同时切换多个工具到同一模型
+  - `asw batch switch <model>` - 批量切换所有工具
+  - `asw batch validate` - 批量验证配置
+  - 支持跳过未安装的工具
+  - 详细的执行报告
+- ✨ **预设管理增强**:
+  - 支持预设描述和标签
+  - 预设验证（检查模型和工具是否有效）
+  - 预设应用前的确认提示
+- ✨ **批量操作增强**:
+  - 自动检测已安装工具
+  - 失败跳过机制（单个工具失败不影响其他工具）
+  - 详细的执行结果统计
+
+### Changed
+- 🔄 优化配置文件结构（支持预设和批量操作）
+- 🔄 改进状态显示（显示预设信息）
+
+### Fixed
+- 🐛 修复批量操作时的并发问题
+- 🐛 修复预设应用时的配置验证问题
+
+### Developer Experience
+- 📚 完善的预设和批量操作文档
+- 🧪 增加单元测试覆盖率
+- ✅ 完成 Spec 003 所有功能
+
 ## [0.2.0] - 2026-03-03
 
 ### Added
@@ -78,6 +161,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✨ 输入验证（URL 格式、模型名称）
 - ✨ 彩色 CLI 输出
 
-[Unreleased]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/releases/tag/v0.1.0
