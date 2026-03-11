@@ -647,10 +647,7 @@ fn execute_preset_list(tags: &[String], format: &str) -> anyhow::Result<()> {
     match format {
         "table" => {
             println!("\n可用的预设 ({}):\n", filtered.len());
-            println!(
-                "{:<20} {:<30} {:<15} 更新时间",
-                "名称", "描述", "标签"
-            );
+            println!("{:<20} {:<30} {:<15} 更新时间", "名称", "描述", "标签");
             println!("{}", "-".repeat(80));
             for preset in &filtered {
                 let tags = preset.tags.join(", ");
@@ -1018,10 +1015,7 @@ fn execute_batch_status(_format: &str) -> anyhow::Result<()> {
     let total = adapters.len();
 
     println!("\n工具配置状态:\n");
-    println!(
-        "{:<20} {:<15} {:<10} 最后更新",
-        "工具", "模型", "状态"
-    );
+    println!("{:<20} {:<15} {:<10} 最后更新", "工具", "模型", "状态");
     println!("{}", "-".repeat(60));
 
     for adapter in adapters {

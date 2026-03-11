@@ -94,10 +94,9 @@ pub fn check_import_dependencies(
     // 检查预设中引用的模型
     for preset in &package.presets {
         for model_name in preset.mappings.values() {
-            if !available_models.contains_key(model_name)
-                && !missing_models.contains(model_name) {
-                    missing_models.push(model_name.clone());
-                }
+            if !available_models.contains_key(model_name) && !missing_models.contains(model_name) {
+                missing_models.push(model_name.clone());
+            }
         }
     }
 
