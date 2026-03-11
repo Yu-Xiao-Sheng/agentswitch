@@ -86,7 +86,7 @@ impl Preset {
 
 /// 验证预设名称格式
 pub fn is_valid_preset_name(name: &str) -> bool {
-    if name.len() < 1 || name.len() > 64 {
+    if name.is_empty() || name.len() > 64 {
         return false;
     }
 

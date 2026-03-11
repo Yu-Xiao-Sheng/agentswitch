@@ -5,6 +5,8 @@ pub mod keyring;
 pub use cipher::Aes256GcmCipher;
 pub use error::CryptoError;
 
+use base64::{Engine as _, engine::general_purpose};
+
 // Re-export EncryptedValue from sync module
 
 /// 加密管理器 trait
@@ -39,13 +41,14 @@ impl AesGcmCryptoManager {
 impl CryptoManager for AesGcmCryptoManager {
     fn encrypt_api_key(&self, api_key: &str) -> Result<String, CryptoError> {
         let encrypted = self.cipher.encrypt(api_key.as_bytes())?;
-        let base64 = base64::encode(&encrypted);
+        let base64 = general_purpose::STANDARD.encode(&encrypted);
 
         Ok(base64)
     }
 
     fn decrypt_api_key(&self, encrypted: &str) -> Result<String, CryptoError> {
-        let decoded = base64::decode(encrypted)
+        let decoded = general_purpose::STANDARD
+            .decode(encrypted)
             .map_err(|e| CryptoError::DecryptionFailed(format!("Base64 解码失败: {}", e)))?;
 
         let decrypted = self.cipher.decrypt(&decoded)?;

@@ -609,7 +609,7 @@ fn execute_preset_create(
     // 验证预设
     let available_models = config_store
         .list_models()
-        .into_iter()
+        .iter()
         .map(|m| m.name.clone())
         .collect::<std::collections::HashSet<_>>();
     preset.validate(&available_models)?;
@@ -648,8 +648,8 @@ fn execute_preset_list(tags: &[String], format: &str) -> anyhow::Result<()> {
         "table" => {
             println!("\n可用的预设 ({}):\n", filtered.len());
             println!(
-                "{:<20} {:<30} {:<15} {}",
-                "名称", "描述", "标签", "更新时间"
+                "{:<20} {:<30} {:<15} 更新时间",
+                "名称", "描述", "标签"
             );
             println!("{}", "-".repeat(80));
             for preset in &filtered {
@@ -792,7 +792,7 @@ fn execute_preset_validate(name: &str) -> anyhow::Result<()> {
     let config_store = ConfigStore::new()?;
     let available_models = config_store
         .list_models()
-        .into_iter()
+        .iter()
         .map(|m| m.name.clone())
         .collect::<std::collections::HashSet<_>>();
 
@@ -964,7 +964,7 @@ fn execute_batch_switch(
     };
 
     // 执行批量切换
-    let result = batch_switch_agents(adapters_to_switch, &model_config);
+    let result = batch_switch_agents(adapters_to_switch, model_config);
 
     // 显示结果
     println!("\n切换工具 (并发数: {}):", 4);
@@ -1019,8 +1019,8 @@ fn execute_batch_status(_format: &str) -> anyhow::Result<()> {
 
     println!("\n工具配置状态:\n");
     println!(
-        "{:<20} {:<15} {:<10} {}",
-        "工具", "模型", "状态", "最后更新"
+        "{:<20} {:<15} {:<10} 最后更新",
+        "工具", "模型", "状态"
     );
     println!("{}", "-".repeat(60));
 

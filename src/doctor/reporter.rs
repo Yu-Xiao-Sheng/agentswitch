@@ -47,7 +47,7 @@ impl SystemInfo {
             os,
             arch,
             shell,
-            git_version: git_version,
+            git_version,
         }
     }
 }

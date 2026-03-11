@@ -20,7 +20,7 @@ pub fn validate_preset_agents(
 
     for agent_name in preset.mappings.keys() {
         // 检查工具是否已安装
-        if let Ok(_) = which::which(agent_name) {
+        if which::which(agent_name).is_ok() {
             // 工具已安装
         } else {
             missing_agents.push(agent_name.clone());

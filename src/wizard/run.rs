@@ -169,7 +169,7 @@ impl Wizard {
         println!();
 
         // 执行每个步骤
-        let steps: Vec<_> = self.steps.iter().cloned().collect();
+        let steps: Vec<_> = self.steps.to_vec();
         for (index, step) in steps.iter().enumerate() {
             println!(
                 "{}",

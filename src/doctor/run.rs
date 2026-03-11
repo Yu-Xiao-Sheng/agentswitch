@@ -87,7 +87,7 @@ fn detect_tool(adapter: &dyn AgentAdapter) -> ToolDetection {
     // 检测可执行文件
     let (status, executable_path, version) = which::which(adapter.name())
         .ok()
-        .and_then(|path| {
+        .map(|path| {
             // 获取版本
             let version = std::process::Command::new(&path)
                 .arg("--version")
@@ -96,9 +96,9 @@ fn detect_tool(adapter: &dyn AgentAdapter) -> ToolDetection {
                 .and_then(|output| String::from_utf8(output.stdout).ok())
                 .map(|s| s.trim().to_string());
 
-            Some((ToolStatus::Installed { healthy: true }, Some(path), version))
+            (ToolStatus::Installed { healthy: true }, Some(path), version)
         })
-        .unwrap_or_else(|| (ToolStatus::NotInstalled, None, None));
+        .unwrap_or((ToolStatus::NotInstalled, None, None));
 
     // 查找配置文件
     let config_path = adapter.config_path().ok();
