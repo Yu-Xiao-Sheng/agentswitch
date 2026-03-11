@@ -50,7 +50,8 @@ inquire = "0.7"
 clap_complete = "4.5"
 
 # Git 操作（Spec 004）
-git2 = "0.18"
+# 使用 vendored openssl 特性，避免交叉编译时找不到 OpenSSL
+git2 = { version = "0.18", features = ["vendored-openssl"] }
 
 # 加密（Spec 004）
 aes-gcm = "0.10"
