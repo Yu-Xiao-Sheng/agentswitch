@@ -177,6 +177,25 @@ impl ConfigStore {
     pub fn get_active_model(&self, agent_name: &str) -> Option<&String> {
         self.config.active_models.get(agent_name)
     }
+
+    /// 检查模型配置是否存在
+    pub fn has_model(&self, name: &str) -> bool {
+        self.config.models.iter().any(|m| m.name == name)
+    }
+
+    /// 获取指定名称的模型配置
+    pub fn get_model(&self, name: &str) -> Option<&ModelConfig> {
+        self.config.models.iter().find(|m| m.name == name)
+    }
+
+    /// 加载所有模型配置为 HashMap
+    pub fn load_all(&self) -> std::collections::HashMap<String, ModelConfig> {
+        self.config
+            .models
+            .iter()
+            .map(|m| (m.name.clone(), m.clone()))
+            .collect()
+    }
 }
 
 #[cfg(test)]

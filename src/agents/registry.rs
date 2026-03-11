@@ -5,7 +5,7 @@
 use crate::agents::AgentAdapter;
 use anyhow::{Result, anyhow};
 use std::collections::HashMap;
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 /// 适配器注册表
 ///
@@ -91,12 +91,12 @@ impl AdapterRegistry {
     /// # 返回
     /// - `Some(adapter)`: 找到的适配器
     /// - `None`: 适配器不存在
-    pub fn get(&self, name: &str) -> Option<Box<dyn AgentAdapter>> {
+    pub fn get(&self, _name: &str) -> Option<Box<dyn AgentAdapter>> {
         // 注意：这里我们需要克隆适配器，因为返回 Box<dyn AgentAdapter>
         // 但由于 AgentAdapter trait 不能克隆，我们只返回引用或重新构造
         // 实际使用中，建议使用 get_adapter_ref() 方法
 
-        let adapters = self.adapters.read().ok()?;
+        let _adapters = self.adapters.read().ok()?;
 
         // 由于无法克隆 Box<dyn AgentAdapter>，这里返回 None
         // 实际应该使用 get_adapter_info() 或其他方法
@@ -149,6 +149,43 @@ impl AdapterRegistry {
             .read()
             .map(|adapters| adapters.len())
             .unwrap_or(0)
+    }
+
+    /// 迭代所有已注册的适配器
+    ///
+    /// # 返回
+    /// 返回一个迭代器，按注册顺序遍历所有适配器
+    pub fn iter(&self) -> Iter<'_> {
+        let guard = self
+            .adapters
+            .read()
+            .unwrap_or_else(|_| panic!("获取注册表读锁失败"));
+
+        let keys = guard.keys().cloned().collect();
+
+        Iter {
+            keys,
+            index: 0,
+            _guard: guard,
+        }
+    }
+
+    /// 对每个已注册的适配器执行回调函数
+    ///
+    /// # 参数
+    /// - `f`: 回调函数，接收适配器引用
+    pub fn for_each_adapter<F>(&self, mut f: F)
+    where
+        F: FnMut(&dyn AgentAdapter),
+    {
+        let adapters = self
+            .adapters
+            .read()
+            .unwrap_or_else(|_| panic!("获取注册表读锁失败"));
+
+        for adapter in adapters.values() {
+            f(adapter.as_ref());
+        }
     }
 
     /// 验证所有已注册的适配器
@@ -280,6 +317,28 @@ pub fn global_registry() -> &'static AdapterRegistry {
 
         registry
     })
+}
+
+/// 适配器名称迭代器
+pub struct Iter<'a> {
+    keys: Vec<String>,
+    index: usize,
+    _guard: std::sync::RwLockReadGuard<'a, HashMap<String, Box<dyn AgentAdapter>>>,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.keys.len() {
+            return None;
+        }
+
+        let key = self.keys[self.index].clone();
+        self.index += 1;
+
+        Some(key)
+    }
 }
 
 #[cfg(test)]

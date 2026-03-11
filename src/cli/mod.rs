@@ -1,10 +1,15 @@
 //! CLI 命令行界面模块
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
 
+pub mod args;
 pub mod commands;
 
+pub use args::{BatchCommands, PresetCommands};
 pub use commands::{AgentCommands, BackupCommands, ModelCommands};
+
+// Spec 004 新增命令导出
+pub use args::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]
@@ -30,6 +35,14 @@ pub enum Command {
     #[command(subcommand)]
     Backup(BackupCommands),
 
+    /// Preset management
+    #[command(subcommand)]
+    Preset(PresetCommands),
+
+    /// Batch operations
+    #[command(subcommand)]
+    Batch(BatchCommands),
+
     /// Show current configuration status
     Status {
         #[arg(long, short)]
@@ -43,6 +56,23 @@ pub enum Command {
         /// Model configuration name
         model: String,
     },
+
+    // ============ Spec 004 新增命令 ============
+    /// Interactive configuration wizard (Spec 004)
+    #[command(subcommand)]
+    Wizard(WizardCommands),
+
+    /// Tool diagnostics (Spec 004)
+    #[command(subcommand)]
+    Doctor(DoctorCommands),
+
+    /// Shell completion (Spec 004)
+    #[command(subcommand)]
+    Completion(CompletionCommands),
+
+    /// Git sync (Spec 004)
+    #[command(subcommand)]
+    Sync(SyncCommands),
 }
 
 impl Command {
@@ -51,8 +81,22 @@ impl Command {
             Command::Model(cmd) => cmd.run(),
             Command::Agent(cmd) => cmd.run(),
             Command::Backup(cmd) => cmd.run(),
+            Command::Preset(cmd) => cmd.run(),
+            Command::Batch(cmd) => cmd.run(),
             Command::Status { detailed: _ } => commands::execute_show_status(),
             Command::Switch { agent, model } => commands::execute_switch(agent, model),
+            // Spec 004 新命令
+            Command::Wizard(cmd) => cmd.run(),
+            Command::Doctor(cmd) => cmd.run(),
+            Command::Completion(cmd) => cmd.run(),
+            Command::Sync(cmd) => cmd.run(),
         }
+    }
+}
+
+impl Cli {
+    /// 获取 clap Command 实例（用于生成补全脚本）
+    pub fn command() -> clap::Command {
+        Cli::command()
     }
 }
