@@ -62,10 +62,10 @@ jobs:
           name: agentswitch-x86_64-unknown-linux-gnu
           path: agentswitch-x86_64-unknown-linux-gnu.tar.gz
 
-  # macOS Intel 构建
-  build-macos-amd64:
-    name: Build macOS Intel
-    runs-on: macos-13  # Intel-based runner
+  # macOS 构建（统一使用 macos-latest，支持 Intel 和 Apple Silicon）
+  build-macos:
+    name: Build macOS (Universal)
+    runs-on: macos-latest
 
     steps:
       - name: Checkout code
@@ -74,7 +74,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-apple-darwin
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -94,69 +94,34 @@ jobs:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build release binary
+      - name: Build macOS Intel (x86_64)
         run: cargo build --release --target x86_64-apple-darwin
 
-      - name: Strip binary
-        run: strip target/x86_64-apple-darwin/release/agentswitch
+      - name: Build macOS ARM64 (Apple Silicon)
+        run: cargo build --release --target aarch64-apple-darwin
 
-      - name: Create tarball
+      - name: Strip binaries
+        run: |
+          strip target/x86_64-apple-darwin/release/agentswitch
+          strip target/aarch64-apple-darwin/release/agentswitch
+
+      - name: Create tarballs
         run: |
           cd target/x86_64-apple-darwin/release
           tar czf ../../../agentswitch-x86_64-apple-darwin.tar.gz agentswitch
-          cd -
+          cd ../../..
 
-      - name: Upload artifact
+          cd target/aarch64-apple-darwin/release
+          tar czf ../../../agentswitch-aarch64-apple-darwin.tar.gz agentswitch
+          cd ../../..
+
+      - name: Upload Intel artifact
         uses: actions/upload-artifact@v4
         with:
           name: agentswitch-x86_64-apple-darwin
           path: agentswitch-x86_64-apple-darwin.tar.gz
 
-  # macOS Apple Silicon 构建
-  build-macos-arm64:
-    name: Build macOS ARM64
-    runs-on: macos-latest  # Apple Silicon runner
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin
-
-      - name: Cache cargo registry
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/registry
-          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo index
-        uses: actions/cache@v4
-        with:
-          path: ~/.cargo/git
-          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Cache cargo build
-        uses: actions/cache@v4
-        with:
-          path: target
-          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
-
-      - name: Build release binary
-        run: cargo build --release --target aarch64-apple-darwin
-
-      - name: Strip binary
-        run: strip target/aarch64-apple-darwin/release/agentswitch
-
-      - name: Create tarball
-        run: |
-          cd target/aarch64-apple-darwin/release
-          tar czf ../../../agentswitch-aarch64-apple-darwin.tar.gz agentswitch
-          cd -
-
-      - name: Upload artifact
+      - name: Upload ARM64 artifact
         uses: actions/upload-artifact@v4
         with:
           name: agentswitch-aarch64-apple-darwin
@@ -225,7 +190,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-linux-amd64, build-macos-amd64, build-macos-arm64, build-deb, upload-install-script]
+    needs: [build-linux-amd64, build-macos, build-deb, upload-install-script]
     permissions:
       contents: write
 
