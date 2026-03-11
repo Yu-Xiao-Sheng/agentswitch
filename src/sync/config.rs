@@ -1,4 +1,3 @@
-
 /// 同步配置
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SyncConfig {

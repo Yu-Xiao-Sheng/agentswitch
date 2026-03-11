@@ -1,4 +1,3 @@
-
 /// 完整诊断报告
 #[derive(Debug, Clone)]
 pub struct DoctorReport {

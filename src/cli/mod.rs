@@ -9,9 +9,7 @@ pub use args::{BatchCommands, PresetCommands};
 pub use commands::{AgentCommands, BackupCommands, ModelCommands};
 
 // Spec 004 新增命令导出
-pub use args::{
-    CompletionCommands, DoctorCommands, SyncCommands, WizardCommands,
-};
+pub use args::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]

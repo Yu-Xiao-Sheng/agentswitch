@@ -39,7 +39,6 @@ pub fn resolve_symlink(path: &Path) -> Result<PathBuf> {
     // 在 Unix 系统上跟随符号链接
     #[cfg(unix)]
     {
-        
         if let Ok(metadata) = fs::metadata(path) {
             let file_type = metadata.file_type();
             if file_type.is_symlink() {
