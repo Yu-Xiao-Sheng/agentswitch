@@ -12,85 +12,145 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-release:
-    name: Build and Release
+  # Linux x86_64 构建
+  build-linux-amd64:
+    name: Build Linux x86_64
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        # 目标平台矩阵
-        include:
-          - target: x86_64-unknown-linux-gnu
-            os: linux
-            arch: amd64
-          - target: aarch64-unknown-linux-gnu
-            os: linux
-            arch: arm64
-          - target: x86_64-apple-darwin
-            os: macos
-            arch: amd64
-          - target: aarch64-apple-darwin
-            os: macos
-            arch: arm64
-
-    continue-on-error: false
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          target: ${{ matrix.target }}
+          targets: x86_64-unknown-linux-gnu
 
       - name: Build release binary
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release --target ${{ matrix.target }}
+        run: cargo build --release --target x86_64-unknown-linux-gnu
 
-      - name: Strip binary (Linux)
-        if: matrix.os == 'linux'
-        run: |
-          strip target/${{ matrix.target }}/release/agentswitch
+      - name: Strip binary
+        run: strip target/x86_64-unknown-linux-gnu/release/agentswitch
 
       - name: Create tarball
         run: |
-          cd target/${{ matrix.target }}/release
-          tar czf ../../../agentswitch-${{ matrix.target }}.tar.gz agentswitch
+          cd target/x86_64-unknown-linux-gnu/release
+          tar czf ../../../agentswitch-x86_64-unknown-linux-gnu.tar.gz agentswitch
           cd -
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: agentswitch-${{ matrix.target }}
-          path: agentswitch-${{ matrix.target }}.tar.gz
+          name: agentswitch-x86_64-unknown-linux-gnu
+          path: agentswitch-x86_64-unknown-linux-gnu.tar.gz
 
-      - name: Upload install script
-        uses: actions/upload-artifact@v4
-        with:
-          name: install-script
-          path: scripts/install.sh
-
-  build-deb:
-    name: Build DEB Package
+  # Linux ARM64 构建（使用 cross）
+  build-linux-arm64:
+    name: Build Linux ARM64
     runs-on: ubuntu-latest
-    needs: build-and-release
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
+          targets: aarch64-unknown-linux-gnu
+
+      - name: Install cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build release binary with cross
+        run: cross build --release --target aarch64-unknown-linux-gnu
+
+      - name: Create tarball
+        run: |
+          cd target/aarch64-unknown-linux-gnu/release
+          tar czf ../../../agentswitch-aarch64-unknown-linux-gnu.tar.gz agentswitch
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-aarch64-unknown-linux-gnu
+          path: agentswitch-aarch64-unknown-linux-gnu.tar.gz
+
+  # macOS Intel 构建
+  build-macos-amd64:
+    name: Build macOS Intel
+    runs-on: macos-13  # Intel-based runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: Build release binary
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Strip binary
+        run: strip target/x86_64-apple-darwin/release/agentswitch
+
+      - name: Create tarball
+        run: |
+          cd target/x86_64-apple-darwin/release
+          tar czf ../../../agentswitch-x86_64-apple-darwin.tar.gz agentswitch
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-x86_64-apple-darwin
+          path: agentswitch-x86_64-apple-darwin.tar.gz
+
+  # macOS Apple Silicon 构建
+  build-macos-arm64:
+    name: Build macOS ARM64
+    runs-on: macos-latest  # Apple Silicon runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Build release binary
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Strip binary
+        run: strip target/aarch64-apple-darwin/release/agentswitch
+
+      - name: Create tarball
+        run: |
+          cd target/aarch64-apple-darwin/release
+          tar czf ../../../agentswitch-aarch64-apple-darwin.tar.gz agentswitch
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-aarch64-apple-darwin
+          path: agentswitch-aarch64-apple-darwin.tar.gz
+
+  # DEB 包构建
+  build-deb:
+    name: Build DEB Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Install cargo-deb
         run: cargo install cargo-deb
@@ -106,10 +166,26 @@ jobs:
           name: deb-package
           path: target/debian/*.deb
 
+  # 上传安装脚本（独立任务）
+  upload-install-script:
+    name: Upload Install Script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload install script
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-script
+          path: scripts/install.sh
+
+  # 创建 GitHub Release
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build-and-release, build-deb]
+    needs: [build-linux-amd64, build-linux-arm64, build-macos-amd64, build-macos-arm64, build-deb, upload-install-script]
     permissions:
       contents: write
 
@@ -128,13 +204,18 @@ jobs:
           find . -type f -exec sha256sum {} \; > SHA256SUMS
           cat SHA256SUMS
 
+      - name: Display release structure
+        run: |
+          echo "Artifacts structure:"
+          ls -R artifacts/
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/*/*.tar.gz
-            artifacts/*/*.deb
+            artifacts/**/*.tar.gz
+            artifacts/**/*.deb
             artifacts/install-script/install.sh
             artifacts/SHA256SUMS
           draft: false
@@ -145,14 +226,28 @@ jobs:
             ## AgentSwitch ${{ github.ref_name }}
 
             📦 Release Assets:
-            - Linux x86_64: agentswitch-x86_64-unknown-linux-gnu.tar.gz
-            - Linux ARM64: agentswitch-aarch64-unknown-linux-gnu.tar.gz
-            - macOS Intel: agentswitch-x86_64-apple-darwin.tar.gz
-            - macOS Apple Silicon: agentswitch-aarch64-apple-darwin.tar.gz
-            - DEB Package: agentswitch_${{ github.ref_name }}_amd64.deb
+
+            **Linux:**
+            - x86_64 (AMD64): `agentswitch-x86_64-unknown-linux-gnu.tar.gz`
+            - ARM64: `agentswitch-aarch64-unknown-linux-gnu.tar.gz`
+            - DEB Package: `agentswitch_*.deb` (Ubuntu/Debian)
+
+            **macOS:**
+            - Intel: `agentswitch-x86_64-apple-darwin.tar.gz`
+            - Apple Silicon: `agentswitch-aarch64-apple-darwin.tar.gz`
 
             🔐 Checksums:
-            See SHA256SUMS for file integrity verification.
+            See `SHA256SUMS` for file integrity verification.
+
+            🚀 Quick Install:
+            ```bash
+            # Linux / macOS
+            curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash
+
+            # Debian / Ubuntu
+            wget https://github.com/Yu-Xiao-Sheng/agentswitch/releases/download/${{ github.ref_name }}/agentswitch_${{ github.ref_name }}_amd64.deb
+            sudo dpkg -i agentswitch_${{ github.ref_name }}_amd64.deb
+            ```
 
             📚 Documentation:
             - Quick Start: https://github.com/Yu-Xiao-Sheng/agentswitch#readme
@@ -165,5 +260,5 @@ jobs:
       - name: Notify on failure
         if: failure()
         run: |
-          echo "Release workflow failed!"
+          echo "::error::Release workflow failed!"
           exit 1
