@@ -24,6 +24,7 @@ cargo test [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECH
 Rust 最新稳定版 (edition = "2024"): Follow standard conventions
 
 ## Recent Changes
+- 001-install-packaging: Added Rust 最新稳定版 (edition = "2024")
 - 004-ux-optimization: Added Rust 最新稳定版 (edition = "2024") + clap 4.x, serde, serde_json, toml, anyhow, dirs, colored, inquire (交互式输入), dialoguer (对话框), git2 (Git 操作)
 
 - 003-preset-management: Added Rust 最新稳定版 (edition = "2024") + clap 4.x, serde, serde_json, toml, anyhow, dirs, colored

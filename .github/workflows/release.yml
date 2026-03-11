@@ -1,0 +1,169 @@
+# AgentSwitch Release Workflow
+# 自动构建多平台二进制和 DEB 包，并上传到 GitHub Releases
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # 目标平台矩阵
+        include:
+          - target: x86_64-unknown-linux-gnu
+            os: linux
+            arch: amd64
+          - target: aarch64-unknown-linux-gnu
+            os: linux
+            arch: arm64
+          - target: x86_64-apple-darwin
+            os: macos
+            arch: amd64
+          - target: aarch64-apple-darwin
+            os: macos
+            arch: arm64
+
+    continue-on-error: false
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          target: ${{ matrix.target }}
+
+      - name: Build release binary
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release --target ${{ matrix.target }}
+
+      - name: Strip binary (Linux)
+        if: matrix.os == 'linux'
+        run: |
+          strip target/${{ matrix.target }}/release/agentswitch
+
+      - name: Create tarball
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../agentswitch-${{ matrix.target }}.tar.gz agentswitch
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-${{ matrix.target }}
+          path: agentswitch-${{ matrix.target }}.tar.gz
+
+      - name: Upload install script
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-script
+          path: scripts/install.sh
+
+  build-deb:
+    name: Build DEB Package
+    runs-on: ubuntu-latest
+    needs: build-and-release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build DEB package
+        run: |
+          cargo build --release
+          cargo deb --no-build --strip --separate-debug-symbols
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: target/debian/*.deb
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-and-release, build-deb]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create SHA256 checksums
+        run: |
+          cd artifacts
+          find . -type f -exec sha256sum {} \; > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/*/*.tar.gz
+            artifacts/*/*.deb
+            artifacts/install-script/install.sh
+            artifacts/SHA256SUMS
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          name: AgentSwitch ${{ github.ref_name }}
+          body: |
+            ## AgentSwitch ${{ github.ref_name }}
+
+            📦 Release Assets:
+            - Linux x86_64: agentswitch-x86_64-unknown-linux-gnu.tar.gz
+            - Linux ARM64: agentswitch-aarch64-unknown-linux-gnu.tar.gz
+            - macOS Intel: agentswitch-x86_64-apple-darwin.tar.gz
+            - macOS Apple Silicon: agentswitch-aarch64-apple-darwin.tar.gz
+            - DEB Package: agentswitch_${{ github.ref_name }}_amd64.deb
+
+            🔐 Checksums:
+            See SHA256SUMS for file integrity verification.
+
+            📚 Documentation:
+            - Quick Start: https://github.com/Yu-Xiao-Sheng/agentswitch#readme
+            - Full Docs: https://github.com/Yu-Xiao-Sheng/agentswitch/blob/main/docs/
+
+            🙏 Thank you for using AgentSwitch!
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Release workflow failed!"
+          exit 1

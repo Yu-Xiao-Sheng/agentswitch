@@ -231,6 +231,60 @@ cargo install --path .
 ### 使用预编译二进制
 访问 [Releases](https://github.com/Yu-Xiao-Sheng/agentswitch/releases) 页面下载最新版本。
 
+## 📦 安装
+
+### 方式 1: Shell 脚本安装（推荐）⭐
+
+一键安装，适用于 Linux 和 macOS：
+
+```bash
+curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash
+```
+
+**自定义安装目录**:
+```bash
+curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash -s -- --install-dir ~/bin
+```
+
+**卸载**:
+```bash
+bash scripts/install.sh --uninstall
+```
+
+### 方式 2: DEB 包安装
+
+适用于 Debian/Ubuntu 系统：
+
+```bash
+# 下载并安装
+wget https://github.com/Yu-Xiao-Sheng/agentswitch/releases/download/v0.4.0/agentswitch_0.4.0_amd64.deb
+sudo dpkg -i agentswitch_0.4.0_amd64.deb
+
+# 或使用 APT（如果配置了 APT 仓库）
+sudo apt update
+sudo apt install agentswitch
+```
+
+### 方式 3: 从源码编译
+
+```bash
+# 克隆仓库
+git clone https://github.com/Yu-Xiao-Sheng/agentswitch.git
+cd agentswitch
+
+# 编译安装
+cargo install --path .
+
+# 或使用 cargo run
+cargo run --release
+```
+
+**支持的系统**:
+- Linux: x86_64 (AMD64), ARM64
+- macOS: Intel (x86_64), Apple Silicon (ARM64)
+
+更多安装方式请查看 [INSTALL.md](INSTALL.md)。
+
 ## 🚀 快速开始
 
 ### 1. 自动初始化
