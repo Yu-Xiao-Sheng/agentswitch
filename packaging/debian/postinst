@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    configure)
+        # 重建 man 手册数据库
+        if command -v mandb >/dev/null 2>&1; then
+            mandb -q -p /usr/share/man
+        fi
+
+        # 显示欢迎消息
+        echo ""
+        echo "✓ AgentSwitch has been installed successfully!"
+        echo ""
+        echo "Quick start:"
+        echo "  asw wizard init       # Start the initialization wizard"
+        echo "  asw --help            # Show all commands"
+        echo ""
+        echo "Documentation:"
+        echo "  man asw               # View manual page"
+        echo "  https://github.com/Yu-Xiao-Sheng/agentswitch"
+        echo ""
+        ;;
+esac
+
+exit 0

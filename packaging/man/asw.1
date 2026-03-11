@@ -1,0 +1,194 @@
+.TH ASW "1" "March 2026" "AgentSwitch 0.4.0" "User Commands"
+.SH NAME
+asw \- AgentSwitch - 通用代码终端代理工具配置切换器
+.SH SYNOPSIS
+.B asw
+[\fI\,options\/\fP] <\fI\,command\/\fP> [\fI\,arguments\/\fP]
+.SH DESCRIPTION
+AgentSwitch 是一个通用的代码终端代理工具配置切换器，支持将任意 OpenAI 协议模型接入到主流 Code Agent 工具中。
+.PP
+支持的 Code Agent 工具包括：
+.RS 4
+.IP \(bu 2
+Claude Code (Anthropic 官方 CLI)
+.IP \(bu 2
+Codex (OpenAI 的代码助手)
+.IP \(bu 2
+Gemini CLI (Google 的代码助手)
+.IP \(bu 2
+Qwen CLI (阿里通义千问)
+.IP \(bu 2
+Grok CLI (xAI 的代码助手)
+.RE
+.SH OPTIONS
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+显示帮助信息
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+显示版本信息
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+显示详细输出
+.SH COMMANDS
+.SS 模型配置管理
+.TP
+\fBasw model\fR \fIadd\fR|\fIlist\fR|\fIremove\fR|\fIedit\fR
+管理模型配置
+.RS
+.PP
+\fBadd\fR: 添加新的模型配置
+.PP
+\fBlist\fR: 列出所有已配置的模型
+.PP
+\fBremove\fR: 删除模型配置
+.PP
+\fBedit\fR: 编辑模型配置
+.RE
+.SS 配置切换
+.TP
+\fBasw switch\fR <\fIagent\fR> <\fImodel\fR>
+切换指定工具到指定模型
+.SS 状态显示
+.TP
+\fBasw status\fR
+显示所有工具的当前配置状态
+.SS 备份管理
+.TP
+\fBasw backup\fR \fIlist\fR|\fIrestore\fR|\fIclean\fR
+管理配置备份
+.RS
+.PP
+\fBlist\fR: 列出所有备份
+.PP
+\fBrestore\fR: 恢复备份
+.PP
+\fBclean\fR: 清理旧备份
+.RE
+.SS 预设管理
+.TP
+\fBasw preset\fR \fIsave\fR|\fIlist\fR|\fIapply\fR|\fIremove\fR|\fIvalidate\fR
+管理配置预设
+.RS
+.PP
+\fBsave\fR: 保存当前配置为预设
+.PP
+\fBlist\fR: 列出所有预设
+.PP
+\fBapply\fR: 应用预设配置
+.PP
+\fBremove\fR: 删除预设
+.PP
+\fBvalidate\fR: 验证预设
+.RE
+.SS 批量操作
+.TP
+\fBasw batch\fR \fIswitch\fR|\fIvalidate\fR
+批量操作多个工具
+.RS
+.PP
+\fBswitch\fR: 批量切换所有工具到同一模型
+.PP
+\fBvalidate\fR: 批量验证配置
+.RE
+.SS 交互式向导
+.TP
+\fBasw wizard\fR \fIinit\fR
+启动初始化向导
+.SS 工具诊断
+.TP
+\fBasw doctor\fR
+运行工具诊断和健康检查
+.SS Shell 补全
+.TP
+\fBasw completion\fR \fIgenerate\fR|\fIinstall\fR
+生成或安装 Shell 补全脚本
+.RS
+.PP
+\fBgenerate\fR: 生成补全脚本
+.PP
+\fBinstall\fR: 安装补全脚本
+.RE
+.SS 配置同步
+.TP
+\fBasw sync\fR \fIinit\fR|\fIstatus\fR|\fIpush\fR|\fIpull\fR
+Git 配置同步
+.RS
+.PP
+\fBinit\fR: 初始化 Git 仓库
+.PP
+\fBstatus\fR: 查看同步状态
+.PP
+\fBpush\fR: 推送到远程
+.PP
+\fBpull\fR: 从远程拉取
+.RE
+.SH EXAMPLES
+.PP
+添加模型配置：
+.PP
+.RS
+.nf
+asw model add glm \\
+  --base-url "https://open.bigmodel.cn/api/v1" \\
+  --api-key "sk-..." \\
+  --model "glm-4"
+.fi
+.RE
+.PP
+列出所有模型：
+.PP
+.RS
+.nf
+asw model list
+.fi
+.RE
+.PP
+切换工具到指定模型：
+.PP
+.RS
+.nf
+asw switch claude-code glm
+.fi
+.RE
+.PP
+查看当前状态：
+.PP
+.RS
+.nf
+asw status
+.fi
+.RE
+.PP
+保存并应用预设：
+.PP
+.RS
+.nf
+asw preset save my-work
+asw preset apply my-work
+.fi
+.RE
+.SH FILES
+.TP 18
+\fI~/.agentswitch/config.toml\fR
+用户配置文件
+.TP 18
+\fI~/.agentswitch/presets/\fR
+配置预设目录
+.TP 18
+\fI~/.agentswitch/backups/\fR
+配置备份目录
+.SH ENVIRONMENT
+.TP
+\fBASW_CONFIG_DIR\fR
+自定义配置目录（默认：~/.agentswitch/）
+.SH BUGS
+请通过 GitHub Issues 报告问题：
+.IP
+https://github.com/Yu-Xiao-Sheng/agentswitch/issues
+.SH AUTHOR
+Yu-Xiao-Sheng <yu.xiao.sheng@example.com>
+.SH SEE ALSO
+完整文档请访问：
+.IP
+https://github.com/Yu-Xiao-Sheng/agentswitch

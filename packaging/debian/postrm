@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+case "$1" in
+    purge)
+        # 提示配置目录
+        echo "Note: User configuration directory (~/.agentswitch/) was NOT removed."
+        echo "To remove it manually:"
+        echo "  rm -rf ~/.agentswitch/"
+        ;;
+
+    remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        # 不做任何操作
+        ;;
+
+esac
+
+exit 0

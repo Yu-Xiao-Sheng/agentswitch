@@ -1,6 +1,6 @@
 [package]
 name = "agentswitch"
-version = "0.1.0"
+version = "0.5.0"
 edition = "2024"
 authors = ["Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"]
 description = "一个通用的代码终端代理工具配置切换器，支持将任意 OpenAI 协议模型接入到主流 Code Agent 工具中"
@@ -50,7 +50,8 @@ inquire = "0.7"
 clap_complete = "4.5"
 
 # Git 操作（Spec 004）
-git2 = "0.18"
+# 使用 vendored openssl 特性，避免交叉编译时找不到 OpenSSL
+git2 = { version = "0.18", features = ["vendored-openssl"] }
 
 # 加密（Spec 004）
 aes-gcm = "0.10"
@@ -60,3 +61,31 @@ base64 = "0.21"
 [dev-dependencies]
 # 测试依赖
 tempfile = "3.10"
+
+# DEB 包配置 (Spec 001)
+[package.metadata.deb]
+maintainer = "Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"
+copyright = "2026, Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"
+license-file = ["LICENSE", "0"]
+depends = "$auto"
+section = "utility"
+priority = "optional"
+extended-description = """\
+AgentSwitch is a universal configuration switcher for code agent tools.
+It allows you to easily switch between different AI model providers
+across tools like Claude Code, Codex, Gemini CLI, and more.
+"""
+
+# 资源文件映射
+assets = [
+    ["target/release/agentswitch", "usr/bin/asw", "755"],
+    ["packaging/man/asw.1", "usr/share/man/man1/asw.1", "644"],
+    ["packaging/completions/asw.bash", "usr/share/bash-completion/completions/asw", "644"],
+    ["packaging/completions/asw.zsh", "usr/share/zsh/vendor-completions/_asw", "644"],
+    ["packaging/completions/asw.fish", "usr/share/fish/vendor_completions.d/asw.fish", "644"],
+    ["README.md", "usr/share/doc/agentswitch/README.md", "644"],
+    ["LICENSE", "usr/share/doc/agentswitch/LICENSE", "644"],
+]
+
+# 维护者脚本
+maintainer-scripts = "packaging/debian"

@@ -7,8 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-11
+
 ### Added
-- 不兼容字段检测和警告功能
+- ✨ **便捷安装系统**: Shell 脚本一键安装和 DEB 包分发
+  - `curl ... | bash` 一键安装，支持 Linux 和 macOS
+  - `bash scripts/install.sh --local-file <path>` 本地二进制安装
+  - DEB 包支持 Debian 11+ 和 Ubuntu 20.04+
+  - GitHub Actions 自动化多平台构建和发布
+  - 支持平台: Linux x86_64/ARM64, macOS Intel/Apple Silicon
+  - 完整的打包系统架构文档，支持未来扩展（RPM、Homebrew、Chocolatey）
+  - Shell 补全自动配置
+  - man 手册页
+- 📚 **文档增强**:
+  - 新增 `INSTALL.md` 详细安装指南
+  - 新增 `docs/packaging.md` 打包系统架构文档
+  - 新增 `docs/roadmap.md` 功能路线图
+
+### Changed
+- 🔄 更新版本号至 v0.5.0
+- 🔄 改进安装脚本，添加 `--local-file` 选项支持本地二进制测试
+
+### Developer Experience
+- 🧪 完整的安装测试脚本（scripts/test-install.sh）
+- ✅ 完成 Spec 001 所有功能
+- ✅ 所有 55 个任务完成
+
+---
+- ✨ **便捷安装系统**: Shell 脚本一键安装和 DEB 包分发
+  - `curl ... | bash` 一键安装，支持 Linux 和 macOS
+  - DEB 包支持 Debian 11+ 和 Ubuntu 20.04+
+  - GitHub Actions 自动化多平台构建和发布
+  - 支持平台: Linux x86_64/ARM64, macOS Intel/Apple Silicon
+  - 完整的打包系统架构文档，支持未来扩展（RPM、Homebrew、Chocolatey）
+  - Shell 补全自动配置
+  - man 手册页
+- 📚 **文档增强**:
+  - 新增 `INSTALL.md` 详细安装指南
+  - 新增 `docs/packaging.md` 打包系统架构文档
+  - 新增 `docs/roadmap.md` 功能路线图
 
 ## [0.4.0] - 2026-03-11
 
@@ -161,7 +198,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ✨ 输入验证（URL 格式、模型名称）
 - ✨ 彩色 CLI 输出
 
-[Unreleased]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Yu-Xiao-Sheng/agentswitch/compare/v0.1.0...v0.2.0

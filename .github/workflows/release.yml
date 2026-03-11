@@ -1,0 +1,268 @@
+# AgentSwitch Release Workflow
+# 自动构建多平台二进制和 DEB 包，并上传到 GitHub Releases
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+  # 允许手动触发
+  workflow_dispatch:
+
+jobs:
+  # Linux x86_64 构建
+  build-linux-amd64:
+    name: Build Linux x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release binary
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Strip binary
+        run: strip target/x86_64-unknown-linux-gnu/release/agentswitch
+
+      - name: Create tarball
+        run: |
+          cd target/x86_64-unknown-linux-gnu/release
+          tar czf ../../../agentswitch-x86_64-unknown-linux-gnu.tar.gz agentswitch
+          cd -
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-x86_64-unknown-linux-gnu
+          path: agentswitch-x86_64-unknown-linux-gnu.tar.gz
+
+  # macOS 构建（统一使用 macos-latest，支持 Intel 和 Apple Silicon）
+  build-macos:
+    name: Build macOS (Universal)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build macOS Intel (x86_64)
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Build macOS ARM64 (Apple Silicon)
+        run: cargo build --release --target aarch64-apple-darwin
+
+      - name: Strip binaries
+        run: |
+          strip target/x86_64-apple-darwin/release/agentswitch
+          strip target/aarch64-apple-darwin/release/agentswitch
+
+      - name: Create tarballs
+        run: |
+          cd target/x86_64-apple-darwin/release
+          tar czf ../../../agentswitch-x86_64-apple-darwin.tar.gz agentswitch
+          cd ../../..
+
+          cd target/aarch64-apple-darwin/release
+          tar czf ../../../agentswitch-aarch64-apple-darwin.tar.gz agentswitch
+          cd ../../..
+
+      - name: Upload Intel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-x86_64-apple-darwin
+          path: agentswitch-x86_64-apple-darwin.tar.gz
+
+      - name: Upload ARM64 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agentswitch-aarch64-apple-darwin
+          path: agentswitch-aarch64-apple-darwin.tar.gz
+
+  # DEB 包构建
+  build-deb:
+    name: Build DEB Package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo index
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/git
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Cache cargo build
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Install cargo-deb
+        run: cargo install cargo-deb
+
+      - name: Build DEB package
+        run: |
+          cargo build --release
+          cargo deb --no-build --strip --separate-debug-symbols
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: target/debian/*.deb
+
+  # 上传安装脚本（独立任务）
+  upload-install-script:
+    name: Upload Install Script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Upload install script
+        uses: actions/upload-artifact@v4
+        with:
+          name: install-script
+          path: scripts/install.sh
+
+  # 创建 GitHub Release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [build-linux-amd64, build-macos, build-deb, upload-install-script]
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create SHA256 checksums
+        run: |
+          cd artifacts
+          find . -type f -exec sha256sum {} \; > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Display release structure
+        run: |
+          echo "Artifacts structure:"
+          ls -R artifacts/
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.deb
+            artifacts/install-script/install.sh
+            artifacts/SHA256SUMS
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          name: AgentSwitch ${{ github.ref_name }}
+          body: |
+            ## AgentSwitch ${{ github.ref_name }}
+
+            📦 Release Assets:
+
+            **Linux:**
+            - x86_64 (AMD64): `agentswitch-x86_64-unknown-linux-gnu.tar.gz`
+            - DEB Package: `agentswitch_*.deb` (Ubuntu/Debian x86_64)
+
+            **macOS:**
+            - Intel: `agentswitch-x86_64-apple-darwin.tar.gz`
+            - Apple Silicon: `agentswitch-aarch64-apple-darwin.tar.gz`
+
+            🔐 Checksums:
+            See `SHA256SUMS` for file integrity verification.
+
+            🚀 Quick Install:
+            ```bash
+            # Linux / macOS (x86_64)
+            curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash
+
+            # Debian / Ubuntu (x86_64)
+            wget https://github.com/Yu-Xiao-Sheng/agentswitch/releases/download/${{ github.ref_name }}/agentswitch_${{ github.ref_name }}_amd64.deb
+            sudo dpkg -i agentswitch_${{ github.ref_name }}_amd64.deb
+            ```
+
+            📚 Documentation:
+            - Quick Start: https://github.com/Yu-Xiao-Sheng/agentswitch#readme
+            - Full Docs: https://github.com/Yu-Xiao-Sheng/agentswitch/blob/main/docs/
+
+            🙏 Thank you for using AgentSwitch!
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "::error::Release workflow failed!"
+          exit 1

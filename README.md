@@ -130,6 +130,39 @@ asw sync pull
 asw sync status
 ```
 
+### 11. 便捷安装与分发 ✅ (已完成 - v0.5.0)
+多种安装方式，大幅降低使用门槛：
+```bash
+# Shell 脚本一键安装（推荐）
+curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash
+
+# DEB 包安装（Debian/Ubuntu）
+wget https://github.com/Yu-Xiao-Sheng/agentswitch/releases/download/v0.5.0/agentswitch_0.5.0_amd64.deb
+sudo dpkg -i agentswitch_0.5.0_amd64.deb
+
+# 从源码编译
+cargo install --path .
+```
+
+支持的平台：
+- Linux x86_64 (AMD64)
+- macOS Intel (x86_64)
+- macOS Apple Silicon (ARM64)
+- DEB 包：Debian 11+ / Ubuntu 20.04+
+```bash
+# 初始化 Git 仓库
+asw sync init
+
+# 推送到远程
+asw sync push
+
+# 从远程拉取
+asw sync pull
+
+# 查看同步状态
+asw sync status
+```
+
 ## 🗺️ 项目蓝图
 
 ### Phase 1: 核心基础 ✅ (已完成 - v0.1.0)
@@ -213,6 +246,27 @@ asw sync status
 - [ ] **插件系统**
   - [ ] 支持社区贡献的适配器
 
+### Phase 8: 便捷安装与分发 ✅ (已完成 - v0.5.0)
+- [x] **Shell 脚本一键安装**
+  - [x] 支持 `curl ... | bash` 快速安装
+  - [x] 自动检测系统架构和操作系统
+  - [x] 支持自定义安装目录
+  - [x] 完整的卸载功能
+  - [x] Shell 补全自动配置
+- [x] **DEB 包构建与分发**
+  - [x] 支持 Debian 11+ 和 Ubuntu 20.04+
+  - [x] 完整的系统集成（man 手册、补全脚本）
+  - [x] 自动生成 DEB 包
+- [x] **CI/CD 自动化发布**
+  - [x] GitHub Actions 多平台构建
+  - [x] 自动创建 GitHub Release
+  - [x] SHA256 校验和生成
+  - [x] 支持 Linux x86_64、macOS Intel/ARM64
+- [x] **完整文档**
+  - [x] INSTALL.md 详细安装指南
+  - [x] docs/packaging.md 打包系统架构
+  - [x] Shell 脚本内联文档
+
 ## 📦 安装
 
 ### 从源码编译
@@ -230,6 +284,60 @@ cargo install --path .
 
 ### 使用预编译二进制
 访问 [Releases](https://github.com/Yu-Xiao-Sheng/agentswitch/releases) 页面下载最新版本。
+
+## 📦 安装
+
+### 方式 1: Shell 脚本安装（推荐）⭐
+
+一键安装，适用于 Linux 和 macOS：
+
+```bash
+curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash
+```
+
+**自定义安装目录**:
+```bash
+curl -sSL https://github.com/Yu-Xiao-Sheng/agentswitch/raw/main/scripts/install.sh | bash -s -- --install-dir ~/bin
+```
+
+**卸载**:
+```bash
+bash scripts/install.sh --uninstall
+```
+
+### 方式 2: DEB 包安装
+
+适用于 Debian/Ubuntu 系统：
+
+```bash
+# 下载并安装
+wget https://github.com/Yu-Xiao-Sheng/agentswitch/releases/download/v0.4.0/agentswitch_0.4.0_amd64.deb
+sudo dpkg -i agentswitch_0.4.0_amd64.deb
+
+# 或使用 APT（如果配置了 APT 仓库）
+sudo apt update
+sudo apt install agentswitch
+```
+
+### 方式 3: 从源码编译
+
+```bash
+# 克隆仓库
+git clone https://github.com/Yu-Xiao-Sheng/agentswitch.git
+cd agentswitch
+
+# 编译安装
+cargo install --path .
+
+# 或使用 cargo run
+cargo run --release
+```
+
+**支持的系统**:
+- Linux: x86_64 (AMD64), ARM64
+- macOS: Intel (x86_64), Apple Silicon (ARM64)
+
+更多安装方式请查看 [INSTALL.md](INSTALL.md)。
 
 ## 🚀 快速开始
 
@@ -395,6 +503,22 @@ cargo run -- model list
 ```
 
 ## 📊 版本历史
+
+### v0.5.0 (2026-03-11)
+- ✨ **便捷安装系统** - Shell 脚本一键安装和 DEB 包分发
+  - `curl ... | bash` 一键安装，支持 Linux 和 macOS
+  - `bash scripts/install.sh --local-file <path>` 本地二进制安装
+  - DEB 包支持 Debian 11+ 和 Ubuntu 20.04+
+  - GitHub Actions 自动化多平台构建和发布
+  - 支持平台: Linux x86_64, macOS Intel/Apple Silicon
+  - 完整的打包系统架构文档，支持未来扩展（RPM、Homebrew、Chocolatey）
+  - Shell 补全自动配置
+  - man 手册页
+- 📚 **文档增强**
+  - 新增 `INSTALL.md` 详细安装指南
+  - 新增 `docs/packaging.md` 打包系统架构文档
+  - 新增 `docs/roadmap.md` 功能路线图
+- ✅ 完成所有 Spec 001 便捷安装与分发功能（55个任务）
 
 ### v0.4.0 (2026-03-11)
 - ✨ **交互式配置向导** - 友好的 CLI 向导引导用户完成初始化配置
