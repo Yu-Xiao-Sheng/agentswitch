@@ -10,10 +10,9 @@ pub mod import;
 pub mod sanitizer;
 
 // 重新导出主要类型
-pub use export::ExportPackage;
-pub use import::{ImportPreview, ImportStrategy};
+pub use import::ImportStrategy;
 // 重新导出导入导出函数
-pub use export::{export_presets, export_single_preset, export_with_model_configs};
+pub use export::export_presets;
 pub use import::{
     check_import_dependencies, import_presets, preview_import_changes, validate_import_file,
 };

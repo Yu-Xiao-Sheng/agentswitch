@@ -112,7 +112,7 @@ pub fn preview_import_changes(
 ) -> ImportPreview {
     let mut new_presets = Vec::new();
     let mut conflict_presets = Vec::new();
-    let mut skipped_presets = Vec::new();
+    let skipped_presets = Vec::new();
 
     for preset in &package.presets {
         if existing_presets.contains_key(&preset.name) {

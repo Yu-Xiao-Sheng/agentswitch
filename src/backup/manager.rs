@@ -291,7 +291,7 @@ impl BackupManager {
         // 简化实现：在 Unix 系统上检查 statvfs
         #[cfg(unix)]
         {
-            use std::os::unix::fs::MetadataExt;
+            
             if let Ok(stat) = fs2::statvfs(&self.backup_dir) {
                 let available = stat.available_space();
                 if available < required_bytes {

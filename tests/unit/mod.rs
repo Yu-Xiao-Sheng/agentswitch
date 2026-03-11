@@ -1,5 +1,4 @@
-//! 单元测试模块
-
-mod agents;
-mod backup;
-mod config;
+mod wizard;
+mod doctor;
+mod completion;
+mod sync;

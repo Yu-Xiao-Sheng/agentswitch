@@ -1,15 +1,13 @@
 //! 安装测试
 
-use std::path::{Path, PathBuf};
-use std::fs;
 use std::env;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// 测试配置目录是否正确创建
 #[test]
 fn test_config_dir_creation() {
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     // 配置目录应该存在（如果之前运行过）
     // 或者能够被创建
@@ -19,9 +17,7 @@ fn test_config_dir_creation() {
 /// 测试配置文件初始化
 #[test]
 fn test_config_file_initialization() {
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     let config_file = config_dir.join("config.toml");
 
@@ -63,7 +59,10 @@ fn test_binary_availability() {
         }
         Err(e) => {
             // 在CI环境中可能无法运行
-            println!("⚠️  无法运行二进制文件测试: {}（这在某些环境中是正常的）", e);
+            println!(
+                "⚠️  无法运行二进制文件测试: {}（这在某些环境中是正常的）",
+                e
+            );
         }
     }
 }
@@ -71,10 +70,7 @@ fn test_binary_availability() {
 /// 测试所有子命令是否可用
 #[test]
 fn test_all_commands_available() {
-    let commands = vec![
-        "--help",
-        "model", "agent", "backup", "preset", "batch",
-    ];
+    let commands = vec!["--help", "model", "agent", "backup", "preset", "batch"];
 
     for cmd in commands {
         let output = std::process::Command::new("cargo")
@@ -112,9 +108,7 @@ fn test_environment_variables() {
 fn test_config_file_permissions() {
     use std::os::unix::fs::PermissionsExt;
 
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     let config_file = config_dir.join("config.toml");
 

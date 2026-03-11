@@ -23,3 +23,9 @@ Cargo.lock
 
 # Configuration (don't commit personal configs)
 .agentswitch/
+
+# Cache directories (Spec 004)
+.cache/
+
+# Wizard state (Spec 004)
+wizard_state.toml

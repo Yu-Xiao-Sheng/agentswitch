@@ -8,7 +8,7 @@ pub mod registry;
 
 pub use adapter::{AgentAdapter, Backup};
 
-pub use registry::{AdapterInfo, AdapterRegistry, ValidationResult, global_registry};
+pub use registry::global_registry;
 
 /// Get all available agent adapters
 pub fn all_adapters() -> Vec<Box<dyn AgentAdapter>> {

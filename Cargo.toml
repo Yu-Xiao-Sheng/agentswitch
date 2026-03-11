@@ -43,6 +43,20 @@ rayon = "1.10"
 # 时间处理
 chrono = { version = "0.4", features = ["serde"] }
 
+# 交互式输入（Spec 004）
+inquire = "0.7"
+
+# Shell 补全（Spec 004）
+clap_complete = "4.5"
+
+# Git 操作（Spec 004）
+git2 = "0.18"
+
+# 加密（Spec 004）
+aes-gcm = "0.10"
+argon2 = "0.5"
+base64 = "0.21"
+
 [dev-dependencies]
 # 测试依赖
 tempfile = "3.10"

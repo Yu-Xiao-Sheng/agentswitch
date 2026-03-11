@@ -1,14 +1,12 @@
 //! 卸载测试
 
-use std::path::{Path, PathBuf};
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// 测试配置备份
 #[test]
 fn test_config_backup_before_uninstall() {
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     if !config_dir.exists() {
         println!("⚠️  配置目录不存在，跳过备份测试");
@@ -46,9 +44,7 @@ fn test_config_backup_before_uninstall() {
 /// 测试配置清理
 #[test]
 fn test_config_cleanup() {
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     if !config_dir.exists() {
         println!("⚠️  配置目录不存在，跳过清理测试");
@@ -70,9 +66,7 @@ fn test_config_cleanup() {
 /// 测试备份文件恢复
 #[test]
 fn test_backup_restore() {
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     let backup_dir = config_dir.with_extension("backup");
 
@@ -127,9 +121,7 @@ fn test_partial_uninstall() {
     println!("测试部分卸载（保留配置）...");
 
     // 部分卸载：只删除二进制文件，保留配置
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     if config_dir.exists() {
         println!("✓ 配置目录保留: {:?}", config_dir);
@@ -144,9 +136,7 @@ fn test_partial_uninstall() {
 fn test_full_uninstall() {
     println!("测试完全卸载...");
 
-    let config_dir = dirs::home_dir()
-        .unwrap()
-        .join(".agentswitch");
+    let config_dir = dirs::home_dir().unwrap().join(".agentswitch");
 
     let backup_dir = config_dir.with_extension("backup");
 

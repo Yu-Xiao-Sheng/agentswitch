@@ -13,9 +13,7 @@ pub mod validator;
 
 // 重新导出主要类型
 pub use apply::PresetAppplier;
-pub use error::PresetError;
 pub use preset::Preset;
-pub use store::PresetCollection;
 pub use store::PresetStore;
 // 重新导出验证函数
-pub use validator::{validate_preset, validate_preset_agents};
+pub use validator::validate_preset_agents;

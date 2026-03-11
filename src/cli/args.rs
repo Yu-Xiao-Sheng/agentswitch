@@ -165,3 +165,209 @@ fn parse_kv(s: &str) -> Result<String, String> {
         Err(format!("Invalid key:value format: {}", s))
     }
 }
+
+// ============ Spec 004 新增命令类型 ============
+
+/// 向导命令（Spec 004）
+#[derive(Subcommand, Debug)]
+pub enum WizardCommands {
+    /// 初始化配置（向导）
+    Init {
+        /// 恢复之前的向导进度
+        #[arg(long)]
+        resume: bool,
+
+        /// 重新开始（清除进度）
+        #[arg(long)]
+        reset: bool,
+
+        /// 尝试非交互式模式（实验性）
+        #[arg(long)]
+        non_interactive: bool,
+    },
+
+    /// 添加模型配置（向导）
+    Wizard {
+        /// 预设模型名称（跳过输入）
+        #[arg(long)]
+        name: Option<String>,
+    },
+}
+
+/// 诊断命令（Spec 004）
+#[derive(Subcommand, Debug)]
+pub enum DoctorCommands {
+    /// 运行完整诊断
+    Doctor {
+        /// 显示详细信息
+        #[arg(short, long)]
+        verbose: bool,
+
+        /// 以 JSON 格式输出
+        #[arg(short, long)]
+        json: bool,
+
+        /// 尝试自动修复问题
+        #[arg(long)]
+        fix: bool,
+    },
+
+    /// 检测已安装工具（简化版）
+    Detect,
+}
+
+/// 补全命令（Spec 004）
+#[derive(Subcommand, Debug)]
+pub enum CompletionCommands {
+    /// 安装补全脚本
+    Install {
+        /// Shell 类型（bash/zsh/fish）
+        shell: String,
+
+        /// 自定义安装路径
+        #[arg(long)]
+        path: Option<String>,
+
+        /// 不修改 Shell 配置文件
+        #[arg(long)]
+        no_modify_config: bool,
+    },
+
+    /// 卸载补全脚本
+    Uninstall {
+        /// Shell 类型（bash/zsh/fish）
+        shell: String,
+
+        /// 自定义安装路径
+        #[arg(long)]
+        path: Option<String>,
+    },
+
+    /// 生成补全脚本到标准输出
+    Generate {
+        /// Shell 类型（bash/zsh/fish）
+        shell: String,
+    },
+}
+
+/// 同步命令（Spec 004）
+#[derive(Subcommand, Debug)]
+pub enum SyncCommands {
+    /// 初始化 Git 仓库
+    Init {
+        /// 启用加密
+        #[arg(long)]
+        encrypt: bool,
+
+        /// 加密方法（aes-gcm/git-crypt）
+        #[arg(long)]
+        encryption_method: Option<String>,
+
+        /// 禁用加密
+        #[arg(long)]
+        no_encrypt: bool,
+    },
+
+    /// 管理远程仓库
+    Remote {
+        #[command(subcommand)]
+        command: RemoteSubCommands,
+    },
+
+    /// 推送到远程
+    Push {
+        /// 远程仓库名称
+        #[arg(long)]
+        remote: Option<String>,
+
+        /// 分支名称
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// 跳过加密（不推荐）
+        #[arg(long)]
+        no_encrypt: bool,
+    },
+
+    /// 从远程拉取
+    Pull {
+        /// 远程仓库名称
+        #[arg(long)]
+        remote: Option<String>,
+
+        /// 分支名称
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// 合并策略
+        #[arg(long)]
+        strategy: Option<String>,
+    },
+
+    /// 显示同步状态
+    Status,
+}
+
+/// 远程仓库子命令（Spec 004）
+#[derive(Subcommand, Debug)]
+pub enum RemoteSubCommands {
+    /// 添加远程仓库
+    Add {
+        /// 远程仓库 URL
+        url: String,
+    },
+
+    /// 删除远程仓库
+    Remove {
+        /// 远仓库名称
+        name: String,
+    },
+
+    /// 列出远程仓库
+    List,
+
+    /// 修改远程仓库 URL
+    SetUrl {
+        /// 远仓库名称
+        name: String,
+        /// 新的 URL
+        url: String,
+    },
+}
+
+// Spec 004 命令的 run() 方法实现
+
+impl WizardCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        // 由 commands.rs 中的具体实现处理
+        Ok(())
+    }
+}
+
+impl DoctorCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        // 由 commands.rs 中的具体实现处理
+        Ok(())
+    }
+}
+
+impl CompletionCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        // 由 commands.rs 中的具体实现处理
+        Ok(())
+    }
+}
+
+impl SyncCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        // 由 commands.rs 中的具体实现处理
+        Ok(())
+    }
+}
+
+impl RemoteSubCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        // 由 commands.rs 中的具体实现处理
+        Ok(())
+    }
+}

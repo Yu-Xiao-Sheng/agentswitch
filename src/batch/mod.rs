@@ -10,7 +10,6 @@ pub mod switch;
 pub mod validate;
 
 // 重新导出主要类型
-pub use status::{BatchOperationResult, ToolOperationResult};
 // 重新导出批量操作函数
-pub use switch::{batch_switch_agents, batch_switch_selected_agents};
-pub use validate::{batch_validate_agents, batch_validate_selected_agents};
+pub use switch::batch_switch_agents;
+pub use validate::batch_validate_agents;
