@@ -1,5 +1,5 @@
 [package]
-name = "agentswitch"
+name = "asw"
 version = "0.6.0"
 edition = "2021"
 authors = ["Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"]
