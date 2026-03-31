@@ -241,6 +241,11 @@ asw sync status
 
 ## 📦 安装
 
+### 从 crates.io 安装（推荐）
+```bash
+cargo install asw
+```
+
 ### 从源码编译
 ```bash
 # 克隆仓库
