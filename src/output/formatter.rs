@@ -46,7 +46,11 @@ pub fn format_providers_table(providers: &[Provider]) -> String {
         let models_str = if provider.models.len() <= 2 {
             provider.models.join(", ")
         } else {
-            format!("{}, ...({} total)", provider.models[0], provider.models.len())
+            format!(
+                "{}, ...({} total)",
+                provider.models[0],
+                provider.models.len()
+            )
         };
         let models_display = if models_str.len() > 20 {
             format!("{}...", &models_str[..17])

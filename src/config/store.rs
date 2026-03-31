@@ -195,12 +195,7 @@ impl ConfigStore {
     }
 
     /// 设置活跃模型
-    pub fn set_active(
-        &mut self,
-        tool: &str,
-        provider: &str,
-        model: &str,
-    ) -> anyhow::Result<()> {
+    pub fn set_active(&mut self, tool: &str, provider: &str, model: &str) -> anyhow::Result<()> {
         self.config
             .set_active(tool, provider.to_string(), model.to_string());
         self.save()

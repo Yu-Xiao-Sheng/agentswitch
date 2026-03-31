@@ -4,9 +4,9 @@ use crate::agents::{all_adapters, global_registry};
 use crate::backup::BackupManager;
 use crate::config::{ConfigStore, Protocol, Provider};
 use crate::error::{
-    invalid_api_key_error, invalid_model_name_error, invalid_url_error, model_not_in_provider_error,
-    network_connection_error, print_error, provider_not_found_error, tool_not_installed_error,
-    AswError,
+    invalid_api_key_error, invalid_model_name_error, invalid_url_error,
+    model_not_in_provider_error, network_connection_error, print_error, provider_not_found_error,
+    tool_not_installed_error, AswError,
 };
 use crate::output::{format_providers_table, print_info, print_success, print_warning};
 use crate::utils::{validate_model_name, validate_url};
@@ -41,13 +41,9 @@ pub enum ProviderCommands {
     /// 列出所有供应商
     List,
     /// 删除供应商
-    Remove {
-        name: String,
-    },
+    Remove { name: String },
     /// 显示供应商详情
-    Show {
-        name: String,
-    },
+    Show { name: String },
     /// 测试供应商连接
     Test {
         name: String,
@@ -55,9 +51,7 @@ pub enum ProviderCommands {
         model: Option<String>,
     },
     /// 从 API 获取模型列表
-    FetchModels {
-        name: String,
-    },
+    FetchModels { name: String },
 }
 
 /// Agent 管理命令
@@ -357,8 +351,7 @@ fn execute_test_provider(name: &str, specific_model: Option<&String>) -> anyhow:
                     AswError::provider("API 端点不存在", name)
                         .suggest("请检查 base_url 配置是否正确")
                 } else if status.as_u16() == 429 {
-                    AswError::provider("请求频率超限", name)
-                        .suggest("请稍后重试，或检查配额限制")
+                    AswError::provider("请求频率超限", name).suggest("请稍后重试，或检查配额限制")
                 } else if status.as_u16() >= 500 {
                     AswError::provider(format!("服务器错误: {}", status), name)
                         .suggest("API 服务暂时不可用，请稍后重试")
@@ -420,7 +413,11 @@ fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
     let json: serde_json::Value = response.json()?;
     let models: Vec<String> = if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
         data.iter()
-            .filter_map(|m| m.get("id").and_then(|id| id.as_str()).map(|s| s.to_string()))
+            .filter_map(|m| {
+                m.get("id")
+                    .and_then(|id| id.as_str())
+                    .map(|s| s.to_string())
+            })
             .collect()
     } else {
         anyhow::bail!("无法解析模型列表响应");
@@ -655,18 +652,27 @@ pub fn execute_show_status(detailed: bool) -> anyhow::Result<()> {
             "✗".red()
         };
 
-        let model_text = active_info.map(|am| format!("{}/{}", am.provider, am.model)).unwrap_or_else(|| {
-            if is_installed {
-                "-".to_string()
-            } else {
-                "".to_string()
-            }
-        });
+        let model_text = active_info
+            .map(|am| format!("{}/{}", am.provider, am.model))
+            .unwrap_or_else(|| {
+                if is_installed {
+                    "-".to_string()
+                } else {
+                    "".to_string()
+                }
+            });
 
         if detailed {
             // 详细模式
             println!("{}", format!("[{}]", name).green().bold());
-            println!("  状态: {}", if is_installed { "已安装" } else { "未安装" });
+            println!(
+                "  状态: {}",
+                if is_installed {
+                    "已安装"
+                } else {
+                    "未安装"
+                }
+            );
             println!("  配置文件: {}", config_path.display());
             if config_exists {
                 println!("  配置文件状态: ✓ 存在");
@@ -760,15 +766,18 @@ pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Resul
         "{}",
         format!("正在切换 {} 到 {}/{} 模型...", agent, provider, model).cyan()
     );
-    
+
     if let Err(e) = adapter.apply(provider_obj, model) {
         let err = AswError::tool(format!("应用配置失败: {}", e), agent)
             .suggest("检查配置文件权限，或运行 'asw doctor' 诊断问题");
         print_error(&err);
         std::process::exit(1);
     }
-    
-    println!("{}", format!("✓ {} 已切换到 {}/{}", agent, provider, model).green());
+
+    println!(
+        "{}",
+        format!("✓ {} 已切换到 {}/{}", agent, provider, model).green()
+    );
 
     // 步骤 3: 更新 active 映射
     store.set_active(agent, provider, model)?;
@@ -1356,7 +1365,10 @@ fn execute_batch_switch(
     println!("\n批量切换到模型: {}/{}", provider_obj.name, model_name);
 
     if dry_run {
-        println!("\n[模拟运行] 将切换以下工具到 {}/{}:\n", provider_obj.name, model_name);
+        println!(
+            "\n[模拟运行] 将切换以下工具到 {}/{}:\n",
+            provider_obj.name, model_name
+        );
         return Ok(());
     }
 
@@ -1787,13 +1799,13 @@ impl UpdateCommands {
 /// 执行更新检查
 fn execute_update_check(force: bool) -> anyhow::Result<()> {
     use crate::update::{check_for_update, display_update_notification};
-    
+
     println!("正在检查更新...");
-    
+
     match check_for_update(force) {
         Ok(info) => {
             display_update_notification(&info);
-            
+
             if info.has_update {
                 if let Some(url) = &info.release_url {
                     println!("📄 发布说明: {}", url);
@@ -1804,6 +1816,6 @@ fn execute_update_check(force: bool) -> anyhow::Result<()> {
             eprintln!("❌ 检查更新失败: {}", e);
         }
     }
-    
+
     Ok(())
 }

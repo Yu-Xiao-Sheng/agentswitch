@@ -6,7 +6,9 @@ pub mod args;
 pub mod commands;
 
 pub use args::{BatchCommands, PresetCommands};
-pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ProviderCommands, UpdateCommands};
+pub use commands::{
+    AgentCommands, BackupCommands, CryptoCommands, ProviderCommands, UpdateCommands,
+};
 
 // Spec 004 新增命令导出 (从 commands.rs 导入，因为那里有 run 实现)
 pub use commands::{CompletionCommands, SyncCommands, WizardCommands};
@@ -116,15 +118,22 @@ impl Command {
             Command::Preset(cmd) => cmd.run(),
             Command::Batch(cmd) => cmd.run(),
             Command::Status { detailed } => commands::execute_show_status(*detailed),
-            Command::Switch { agent, provider, model } => commands::execute_switch(agent, provider, model),
+            Command::Switch {
+                agent,
+                provider,
+                model,
+            } => commands::execute_switch(agent, provider, model),
             // Spec 004 新命令
             Command::Wizard(cmd) => cmd.run(),
-            Command::Doctor { verbose, json, fix, command } => {
-                match command {
-                    Some(DoctorSubcommand::Detect) => crate::doctor::run_detect(),
-                    None => crate::doctor::run_doctor(*verbose, *json, *fix),
-                }
-            }
+            Command::Doctor {
+                verbose,
+                json,
+                fix,
+                command,
+            } => match command {
+                Some(DoctorSubcommand::Detect) => crate::doctor::run_detect(),
+                None => crate::doctor::run_doctor(*verbose, *json, *fix),
+            },
             Command::Completion(cmd) => cmd.run(),
             Command::Sync(cmd) => cmd.run(),
             Command::Crypto(cmd) => cmd.run(),

@@ -43,7 +43,8 @@ impl PresetAppplier {
 
             // 转换为 Provider
             let provider = model_config.to_provider();
-            let model = model_config.get_default_model()
+            let model = model_config
+                .get_default_model()
                 .or_else(|| model_config.models.first().map(|s| s.as_str()))
                 .ok_or_else(|| anyhow::anyhow!("模型配置中没有可用模型"))?;
 
@@ -88,7 +89,8 @@ impl PresetAppplier {
 
             // 转换为 Provider
             let provider = model_config.to_provider();
-            let model = model_config.get_default_model()
+            let model = model_config
+                .get_default_model()
                 .or_else(|| model_config.models.first().map(|s| s.as_str()))
                 .ok_or_else(|| anyhow::anyhow!("模型配置中没有可用模型"))?;
 

@@ -61,10 +61,7 @@ impl ModelConfig {
 
         if let Some(ref default) = self.default_model {
             if !self.models.contains(default) {
-                anyhow::bail!(
-                    "默认模型 '{}' 不在模型列表中",
-                    default
-                );
+                anyhow::bail!("默认模型 '{}' 不在模型列表中", default);
             }
         }
 
@@ -74,7 +71,7 @@ impl ModelConfig {
     /// 转换为 Provider（用于 AgentAdapter）
     pub fn to_provider(&self) -> crate::config::Provider {
         use crate::config::Protocol;
-        
+
         // 根据 base_url 或 name 推断协议类型
         let protocol = if self.base_url.contains("anthropic")
             || self.name.contains("anthropic")

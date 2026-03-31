@@ -138,10 +138,7 @@ impl AgentAdapter for ClaudeCodeAdapter {
 
         // 设置 API 基础 URL
         // Claude Code 使用 ANTHROPIC_BASE_URL 环境变量
-        env.insert(
-            "ANTHROPIC_BASE_URL".to_string(),
-            provider.base_url.clone(),
-        );
+        env.insert("ANTHROPIC_BASE_URL".to_string(), provider.base_url.clone());
 
         // 设置 API Key
         // Claude Code 支持 ANTHROPIC_API_KEY 或 ANTHROPIC_AUTH_TOKEN
@@ -220,7 +217,10 @@ mod tests {
         let settings = ClaudeCodeSettings {
             env: Some({
                 let mut env = HashMap::new();
-                env.insert("ANTHROPIC_BASE_URL".to_string(), "https://api.example.com".to_string());
+                env.insert(
+                    "ANTHROPIC_BASE_URL".to_string(),
+                    "https://api.example.com".to_string(),
+                );
                 env.insert("ANTHROPIC_API_KEY".to_string(), "sk-test".to_string());
                 env.insert("ANTHROPIC_MODEL".to_string(), "claude-sonnet-4".to_string());
                 env

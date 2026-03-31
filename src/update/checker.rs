@@ -3,8 +3,8 @@
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use reqwest::blocking::Client;
-use serde::{Deserialize, Serialize};
 use semver::Version;
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -73,11 +73,11 @@ fn get_cache_path() -> Result<PathBuf> {
     let cache_dir = dirs::cache_dir()
         .unwrap_or_else(|| PathBuf::from("."))
         .join("agentswitch");
-    
+
     if !cache_dir.exists() {
         fs::create_dir_all(&cache_dir)?;
     }
-    
+
     Ok(cache_dir.join(CACHE_FILE))
 }
 
@@ -87,7 +87,7 @@ fn read_cache() -> Option<CheckCache> {
     if !cache_path.exists() {
         return None;
     }
-    
+
     let content = fs::read_to_string(cache_path).ok()?;
     serde_json::from_str(&content).ok()
 }
@@ -110,14 +110,17 @@ fn is_cache_valid(cache: &CheckCache) -> bool {
 /// 从 crates.io 获取最新版本
 fn fetch_latest_version_crates_io(client: &Client) -> Result<String> {
     let url = format!("{}/{}", CRATES_IO_API, PACKAGE_NAME);
-    
+
     let response = client
         .get(&url)
-        .header("User-Agent", format!("{}-update-checker/{}", PACKAGE_NAME, CURRENT_VERSION))
+        .header(
+            "User-Agent",
+            format!("{}-update-checker/{}", PACKAGE_NAME, CURRENT_VERSION),
+        )
         .timeout(Duration::from_secs(10))
         .send()?
         .json::<CratesIoResponse>()?;
-    
+
     Ok(response.crate_data.newest_version)
 }
 
@@ -125,15 +128,22 @@ fn fetch_latest_version_crates_io(client: &Client) -> Result<String> {
 fn fetch_latest_version_github(client: &Client) -> Result<(String, String)> {
     let response = client
         .get(GITHUB_API)
-        .header("User-Agent", format!("{}-update-checker/{}", PACKAGE_NAME, CURRENT_VERSION))
+        .header(
+            "User-Agent",
+            format!("{}-update-checker/{}", PACKAGE_NAME, CURRENT_VERSION),
+        )
         .header("Accept", "application/vnd.github.v3+json")
         .timeout(Duration::from_secs(10))
         .send()?
         .json::<GitHubRelease>()?;
-    
+
     // 移除 'v' 前缀（如果有）
-    let version = response.tag_name.strip_prefix('v').unwrap_or(&response.tag_name).to_string();
-    
+    let version = response
+        .tag_name
+        .strip_prefix('v')
+        .unwrap_or(&response.tag_name)
+        .to_string();
+
     Ok((version, response.html_url))
 }
 
@@ -141,7 +151,7 @@ fn fetch_latest_version_github(client: &Client) -> Result<(String, String)> {
 fn compare_versions(current: &str, latest: &str) -> Result<bool> {
     let current_ver = Version::parse(current)?;
     let latest_ver = Version::parse(latest)?;
-    
+
     Ok(latest_ver > current_ver)
 }
 
@@ -155,10 +165,10 @@ pub fn check_for_update(force: bool) -> Result<UpdateInfo> {
             }
         }
     }
-    
+
     // 执行检查
     let client = Client::new();
-    
+
     // 优先从 crates.io 获取，失败则从 GitHub 获取
     let (latest_version, release_url) = match fetch_latest_version_crates_io(&client) {
         Ok(version) => {
@@ -175,9 +185,9 @@ pub fn check_for_update(force: bool) -> Result<UpdateInfo> {
             }
         }
     };
-    
+
     let has_update = compare_versions(CURRENT_VERSION, &latest_version)?;
-    
+
     let update_info = UpdateInfo {
         latest_version: latest_version.clone(),
         current_version: CURRENT_VERSION.to_string(),
@@ -185,14 +195,14 @@ pub fn check_for_update(force: bool) -> Result<UpdateInfo> {
         checked_at: Utc::now(),
         release_url,
     };
-    
+
     // 写入缓存
     let cache = CheckCache {
         last_check: Utc::now(),
         result: update_info.clone(),
     };
     write_cache(&cache)?;
-    
+
     Ok(update_info)
 }
 
@@ -202,7 +212,7 @@ pub fn display_update_notification(info: &UpdateInfo) {
         println!("✓ 已是最新版本: v{}", info.current_version);
         return;
     }
-    
+
     println!();
     println!("┌─────────────────────────────────────────────────────────────┐");
     println!("│  📦 有新版本可用!                                            │");

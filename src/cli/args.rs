@@ -164,10 +164,16 @@ fn parse_kv(s: &str) -> Result<String, String> {
         if !key.is_empty() && !value.is_empty() {
             Ok(s.to_string())
         } else {
-            Err(format!("Invalid key:value format: {} (key and value must be non-empty)", s))
+            Err(format!(
+                "Invalid key:value format: {} (key and value must be non-empty)",
+                s
+            ))
         }
     } else {
-        Err(format!("Invalid key:value format: {} (expected 'key:value')", s))
+        Err(format!(
+            "Invalid key:value format: {} (expected 'key:value')",
+            s
+        ))
     }
 }
 

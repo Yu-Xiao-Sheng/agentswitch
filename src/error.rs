@@ -111,15 +111,9 @@ pub enum AswError {
         suggestion: String,
     },
     /// 加密错误
-    Crypto {
-        message: String,
-        suggestion: String,
-    },
+    Crypto { message: String, suggestion: String },
     /// Git 错误
-    Git {
-        message: String,
-        suggestion: String,
-    },
+    Git { message: String, suggestion: String },
     /// 其他错误
     Other { message: String },
 }
@@ -155,7 +149,9 @@ impl AswError {
     pub fn suggest(mut self, suggestion: impl Into<String>) -> Self {
         match &mut self {
             Self::Config { suggestion: s, .. } => *s = suggestion.into(),
-            Self::Network { suggestions: ss, .. } => ss.push(suggestion.into()),
+            Self::Network {
+                suggestions: ss, ..
+            } => ss.push(suggestion.into()),
             Self::Permission { suggestion: s, .. } => *s = suggestion.into(),
             Self::Provider { suggestion: s, .. } => *s = suggestion.into(),
             Self::Tool { suggestion: s, .. } => *s = suggestion.into(),
@@ -347,7 +343,10 @@ impl std::fmt::Display for AswError {
                     writeln!(f, "  • {}", suggestion)?;
                 }
             }
-            Self::Crypto { message, suggestion } => {
+            Self::Crypto {
+                message,
+                suggestion,
+            } => {
                 writeln!(f, "  {}: {}", "类型".bold(), "加密错误".yellow())?;
                 writeln!(f, "  {}: {}", "描述".bold(), message)?;
                 if !suggestion.is_empty() {
@@ -356,7 +355,10 @@ impl std::fmt::Display for AswError {
                     writeln!(f, "  • {}", suggestion)?;
                 }
             }
-            Self::Git { message, suggestion } => {
+            Self::Git {
+                message,
+                suggestion,
+            } => {
                 writeln!(f, "  {}: {}", "类型".bold(), "Git 错误".yellow())?;
                 writeln!(f, "  {}: {}", "描述".bold(), message)?;
                 if !suggestion.is_empty() {
@@ -441,14 +443,15 @@ pub fn invalid_model_name_error(name: &str, reason: &str) -> AswError {
 
 /// 创建提供商不存在错误
 pub fn provider_not_found_error(provider: &str) -> AswError {
-    AswError::provider(format!("供应商 '{}' 不存在", provider), provider)
-        .suggest(format!("运行 'asw provider list' 查看所有供应商，或使用 'asw provider add {}' 添加", provider))
+    AswError::provider(format!("供应商 '{}' 不存在", provider), provider).suggest(format!(
+        "运行 'asw provider list' 查看所有供应商，或使用 'asw provider add {}' 添加",
+        provider
+    ))
 }
 
 /// 创建工具未安装错误
 pub fn tool_not_installed_error(tool: &str) -> AswError {
-    AswError::tool(format!("未检测到 {} 安装", tool), tool)
-        .suggest(get_install_hint(tool))
+    AswError::tool(format!("未检测到 {} 安装", tool), tool).suggest(get_install_hint(tool))
 }
 
 /// 创建配置文件不存在错误
@@ -484,18 +487,19 @@ pub fn permission_denied_error(path: &str, operation: &str) -> AswError {
 }
 
 /// 创建模型不在提供商列表中错误
-pub fn model_not_in_provider_error(model: &str, provider: &str, available_models: &[String]) -> AswError {
+pub fn model_not_in_provider_error(
+    model: &str,
+    provider: &str,
+    available_models: &[String],
+) -> AswError {
     let available = if available_models.is_empty() {
         "无可用模型".to_string()
     } else {
         available_models.join(", ")
     };
 
-    AswError::provider(
-        format!("模型 '{}' 不在供应商的模型列表中", model),
-        provider,
-    )
-    .suggest(format!("可用模型: {}", available))
+    AswError::provider(format!("模型 '{}' 不在供应商的模型列表中", model), provider)
+        .suggest(format!("可用模型: {}", available))
 }
 
 /// 获取工具安装提示
