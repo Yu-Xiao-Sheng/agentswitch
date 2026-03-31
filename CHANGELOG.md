@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2026-03-31
+
+### Added
+- **多模型支持**: 一个渠道支持多个模型
+  - `model add --models`: 添加多个模型
+  - `model show`: 查看渠道所有模型
+- **Provider 测试**: 测试 API 连接和模型可用性
+  - `model test <provider>`: 测试渠道
+  - `model test <provider> --model <name>`: 测试特定模型
+  - `model add --test`: 添加时自动测试
+- **模型列表获取**: 从 API 自动获取可用模型
+  - `model fetch <provider>`: 从 /v1/models 获取
+- **批量配置**: 从文件批量添加模型
+  - `model batch <provider> --file models.txt`
+- **配置文件管理**: 支持直接编辑配置文件
+  - 位置: `~/.agentswitch/config.toml`
+  - 格式: TOML
+
+### Changed
+- ModelConfig 结构支持 models 数组
+- model_id 字段改为 default_model
+- 所有适配器更新使用新 API
+
+### Fixed
+- 编译错误修复（model_id → get_default_model()）
+
+---
+
 ## [0.6.0] - 2026-03-31
 
 ### Added
