@@ -42,7 +42,7 @@ impl AgentAdapter for ClaudeCodeAdapter {
 
     fn detect(&self) -> Result<bool> {
         // 检查可执行文件是否存在（在 PATH 中）
-        let in_path = which::which("claude-code").is_ok();
+        let in_path = which::which("claude").is_ok();
 
         // 检查配置文件是否存在
         let config_path = self.config_path();
