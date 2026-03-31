@@ -17,6 +17,24 @@
 
 这些工具虽然原生支持各自厂商的模型，但大多数也支持任意兼容 OpenAI 协议的 API。本工具旨在提供一个统一的配置管理界面，让用户可以轻松地在这些工具间切换不同的模型提供商，实现"一次配置，处处使用"的便捷体验。
 
+## 🎯 支持的工具
+
+| 工具 | 支持状态 | 支持的协议 |
+|------|---------|-----------|
+| **claude-code** | ✅ 支持 | Anthropic `/v1/messages` |
+| **opencode** | ✅ 支持 | OpenAI `/v1/chat/completions` + Anthropic `/v1/messages` |
+| **gemini-cli** | ✅ 支持 | OpenAI `/v1/chat/completions` |
+| **qwen-cli** | ✅ 支持 | OpenAI `/v1/chat/completions` |
+| **grok-cli** | ✅ 支持 | OpenAI `/v1/chat/completions` |
+| **codex** | ❌ 暂不支持 | 使用 Response API，兼容性问题 |
+
+### 协议兼容说明
+
+- **OpenAI 兼容协议**: `/v1/chat/completions` - 大多数国内模型厂商（智谱、百川、MiniMax 等）支持
+- **Anthropic 兼容协议**: `/v1/messages` - Claude Code 专用协议
+
+> ⚠️ **Codex 说明**: Codex 使用 OpenAI Response API（非标准 chat/completions 协议），与自定义供应商兼容性较差，暂不支持切换。如需使用自定义供应商，推荐使用 opencode 或 gemini-cli。
+
 ## 🎯 核心功能
 
 ### 1. 模型配置统一管理
@@ -26,20 +44,28 @@
 
 ### 2. Code Agent 工具支持 ✅ (已完成 - v0.2.0)
 自动检测并适配已安装的 Code Agent 工具，修改其配置文件以使用指定的模型：
-- Claude Code (`~/.claude/config.json`)
-- Codex (`~/.codex/config.toml`)
-- Gemini CLI (`~/.gemini-cli/config.yaml`)
-- Qwen CLI (`~/.qwen-cli/config.json`)
-- Grok CLI (`~/.grok-cli/config.toml`)
+
+| 工具 | 配置文件路径 | 协议类型 |
+|------|-------------|---------|
+| Claude Code | `~/.claude/settings.json` | Anthropic |
+| OpenCode | `~/.config/opencode/opencode.json` | OpenAI + Anthropic |
+| Gemini CLI | `~/.gemini/settings.json` | OpenAI |
+| Qwen CLI | `~/.qwen-cli/config.json` | OpenAI |
+| Grok CLI | `~/.grok-cli/config.toml` | OpenAI |
+
+> **注意**: Codex 使用 Response API，暂不支持自定义供应商切换。
 
 ### 3. 配置切换与对比 ✅ (已完成 - v0.2.0)
 快速在不同工具间切换模型配置，方便对比不同模型在同一工具下的表现：
 ```bash
-# 将 Codex 切换到 GLM-4
-asw switch codex glm-4
+# 将 opencode 切换到 GLM-4
+asw switch opencode glm
 
-# 将 Claude Code 切换到 MiniMax
-asw switch claude-code minimax
+# 将 claude-code 切换到自定义 Anthropic 兼容模型
+asw switch claude-code my-claude-model
+
+# 将 gemini-cli 切换到 DeepSeek
+asw switch gemini-cli deepseek
 ```
 
 ### 4. 配置文件备份与恢复 ✅ (已完成 - v0.2.0)
@@ -75,7 +101,7 @@ asw preset validate my-work
 同时切换多个工具到同一模型：
 ```bash
 # 批量切换所有工具到 GLM-4
-asw batch switch glm-4
+asw batch switch glm
 
 # 批量验证配置
 asw batch validate
@@ -238,10 +264,16 @@ cargo install --path .
 
 ### 2. 添加模型配置
 ```bash
-# 添加 GLM 模型配置
+# 添加智谱 GLM 模型配置
 asw model add glm \
-  --base-url "https://open.bigmodel.cn/api/v1" \
+  --base-url "https://open.bigmodel.cn/api/paas/v4" \
   --api-key "sk-..." \
+  --model "glm-4"
+
+# 添加京东云模型配置
+asw model add jdcloud \
+  --base-url "https://aiapi.jdcloud.com/v1" \
+  --api-key "your-api-key" \
   --model "glm-4"
 
 # 添加 MiniMax 配置
@@ -249,20 +281,41 @@ asw model add minimax \
   --base-url "https://api.minimax.chat/v1" \
   --api-key "your-api-key" \
   --model "abab6.5s-chat"
+
+# 添加 DeepSeek 配置
+asw model add deepseek \
+  --base-url "https://api.deepseek.com/v1" \
+  --api-key "your-api-key" \
+  --model "deepseek-chat"
 ```
 
-### 3. 列出所有模型
+### 3. 切换工具配置
 ```bash
+# 将 opencode 切换到 GLM-4
+asw switch opencode glm
+
+# 将 claude-code 切换到自定义 Anthropic 兼容模型
+asw switch claude-code my-claude-model
+
+# 将 gemini-cli 切换到 DeepSeek
+asw switch gemini-cli deepseek
+```
+
+### 4. 查看状态
+```bash
+# 查看所有工具当前使用的模型
+asw status
+
+# 列出所有已配置的模型
 asw model list
 ```
 
-### 4. 编辑模型配置
+### 5. 配置管理
 ```bash
+# 编辑模型配置
 asw model edit glm --model "glm-4-turbo"
-```
 
-### 5. 删除模型配置
-```bash
+# 删除模型配置
 asw model remove glm
 ```
 
@@ -316,6 +369,86 @@ asw
     └── serve        # 启动 Web 界面
 ```
 
+## 📝 供应商配置示例
+
+### 国内厂商
+
+#### 智谱 GLM
+```bash
+asw model add glm \
+  --base-url "https://open.bigmodel.cn/api/paas/v4" \
+  --api-key "your-zhipu-api-key" \
+  --model "glm-4"
+```
+
+#### 京东云
+```bash
+asw model add jdcloud \
+  --base-url "https://aiapi.jdcloud.com/v1" \
+  --api-key "your-jdcloud-api-key" \
+  --model "glm-4"
+```
+
+#### DeepSeek
+```bash
+asw model add deepseek \
+  --base-url "https://api.deepseek.com/v1" \
+  --api-key "your-deepseek-api-key" \
+  --model "deepseek-chat"
+```
+
+#### MiniMax
+```bash
+asw model add minimax \
+  --base-url "https://api.minimax.chat/v1" \
+  --api-key "your-minimax-api-key" \
+  --model "abab6.5s-chat"
+```
+
+#### 通义千问 (Qwen)
+```bash
+asw model add qwen \
+  --base-url "https://dashscope.aliyuncs.com/compatible-mode/v1" \
+  --api-key "your-qwen-api-key" \
+  --model "qwen-turbo"
+```
+
+### 国际厂商
+
+#### OpenAI
+```bash
+asw model add openai \
+  --base-url "https://api.openai.com/v1" \
+  --api-key "your-openai-api-key" \
+  --model "gpt-4o"
+```
+
+#### Anthropic (Claude)
+```bash
+asw model add claude \
+  --base-url "https://api.anthropic.com" \
+  --api-key "your-anthropic-api-key" \
+  --model "claude-sonnet-4-20250514"
+```
+
+### 本地部署
+
+#### Ollama
+```bash
+asw model add ollama \
+  --base-url "http://localhost:11434/v1" \
+  --api-key "ollama" \
+  --model "llama3"
+```
+
+#### vLLM
+```bash
+asw model add vllm \
+  --base-url "http://localhost:8000/v1" \
+  --api-key "none" \
+  --model "your-model-name"
+```
+
 ## 🛠️ 技术架构
 
 ### 目录结构
@@ -338,12 +471,16 @@ agentswitch/
 │   │   ├── mod.rs
 │   │   ├── validation.rs    # 输入验证
 │   │   └── permissions.rs   # 文件权限
-│   └── agents/              # Agent 适配器（计划中）
+│   └── agents/              # Agent 适配器 ✅ (已实现)
 │       ├── mod.rs
 │       ├── adapter.rs       # 适配器 trait
+│       ├── registry.rs      # 适配器注册表
 │       ├── claude_code.rs   # Claude Code 适配器
-│       ├── codex.rs         # Codex 适配器
-│       └── gemini.rs        # Gemini CLI 适配器
+│       ├── opencode.rs      # OpenCode 适配器
+│       ├── gemini.rs        # Gemini CLI 适配器
+│       ├── codex.rs         # Codex 适配器 (暂不支持)
+│       ├── qwen.rs          # Qwen CLI 适配器
+│       └── grok.rs          # Grok CLI 适配器
 ├── tests/                   # 集成测试
 │   └── integration/
 ├── Cargo.toml
@@ -353,7 +490,7 @@ agentswitch/
 
 ### 核心设计
 
-#### AgentAdapter Trait（计划中）
+#### AgentAdapter Trait（已实现）
 ```rust
 pub trait AgentAdapter {
     fn name(&self) -> &str;
