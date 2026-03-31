@@ -2,8 +2,8 @@
 
 use crate::agents::{all_adapters, global_registry};
 use crate::backup::BackupManager;
-use crate::config::{ConfigStore, ModelConfig};
-use crate::output::{format_models_table, print_info, print_success, print_warning};
+use crate::config::{ConfigStore, ModelConfig, Protocol, Provider};
+use crate::output::{format_providers_table, print_info, print_success, print_warning};
 use crate::utils::{validate_model_name, validate_url};
 use colored::Colorize;
 
@@ -14,11 +14,12 @@ use crate::backup::BackupInfo;
 // 导入预设和批量命令类型
 use super::args::{BatchCommands, PresetCommands};
 
-/// Model 管理命令
+/// Provider 管理命令（替代旧 ModelCommands）
 #[derive(clap::Subcommand, Debug)]
-pub enum ModelCommands {
-    /// 添加模型配置
+pub enum ProviderCommands {
+    /// 添加供应商
     Add {
+        /// 供应商名称
         name: String,
         #[arg(long)]
         base_url: String,
@@ -26,44 +27,31 @@ pub enum ModelCommands {
         api_key: String,
         #[arg(long, value_delimiter = ',')]
         models: Vec<String>,
+        /// 协议类型 (openai/anthropic)
+        #[arg(long, default_value = "openai")]
+        protocol: String,
         #[arg(long)]
         test: bool,
     },
-    /// 列出所有模型
+    /// 列出所有供应商
     List,
-    /// 删除模型配置
+    /// 删除供应商
     Remove {
         name: String,
     },
-    /// 编辑模型配置
-    Edit {
-        name: String,
-        #[arg(long)]
-        base_url: Option<String>,
-        #[arg(long)]
-        api_key: Option<String>,
-        #[arg(long, value_delimiter = ',')]
-        models: Option<Vec<String>>,
-    },
-    /// 显示模型配置详情
+    /// 显示供应商详情
     Show {
         name: String,
     },
-    /// 测试模型连接
+    /// 测试供应商连接
     Test {
         name: String,
         #[arg(long)]
         model: Option<String>,
     },
     /// 从 API 获取模型列表
-    Fetch {
+    FetchModels {
         name: String,
-    },
-    /// 批量添加模型
-    Batch {
-        name: String,
-        #[arg(long)]
-        file: Option<String>,
     },
 }
 
@@ -97,28 +85,22 @@ pub enum BackupCommands {
     },
 }
 
-impl ModelCommands {
+impl ProviderCommands {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
-            ModelCommands::Add {
+            ProviderCommands::Add {
                 name,
                 base_url,
                 api_key,
                 models,
+                protocol,
                 test,
-            } => execute_add_model(name, base_url, api_key, models, *test),
-            ModelCommands::List => execute_list_models(),
-            ModelCommands::Remove { name } => execute_remove_model(name),
-            ModelCommands::Edit {
-                name,
-                base_url,
-                api_key,
-                models,
-            } => execute_edit_model(name, base_url.as_ref(), api_key.as_ref(), models.as_ref()),
-            ModelCommands::Show { name } => execute_show_model(name),
-            ModelCommands::Test { name, model } => execute_test_model(name, model.as_ref()),
-            ModelCommands::Fetch { name } => execute_fetch_models(name),
-            ModelCommands::Batch { name, file } => execute_batch_add_models(name, file.as_ref()),
+            } => execute_add_provider(name, base_url, api_key, models, protocol, *test),
+            ProviderCommands::List => execute_list_providers(),
+            ProviderCommands::Remove { name } => execute_remove_provider(name),
+            ProviderCommands::Show { name } => execute_show_provider(name),
+            ProviderCommands::Test { name, model } => execute_test_provider(name, model.as_ref()),
+            ProviderCommands::FetchModels { name } => execute_fetch_models(name),
         }
     }
 }
@@ -142,11 +124,12 @@ impl BackupCommands {
     }
 }
 
-fn execute_add_model(
+fn execute_add_provider(
     name: &str,
     base_url: &str,
     api_key: &str,
     models: &[String],
+    protocol: &str,
     test: bool,
 ) -> anyhow::Result<()> {
     validate_model_name(name)?;
@@ -156,143 +139,104 @@ fn execute_add_model(
         anyhow::bail!("至少需要指定一个模型");
     }
 
-    let model_config = ModelConfig::new(
+    let proto = match protocol.to_lowercase().as_str() {
+        "openai" => Protocol::OpenAI,
+        "anthropic" => Protocol::Anthropic,
+        _ => anyhow::bail!("不支持的协议类型: {} (支持: openai, anthropic)", protocol),
+    };
+
+    let provider = Provider::new(
         name.to_string(),
         base_url.to_string(),
         api_key.to_string(),
+        proto,
         models.to_vec(),
     );
 
-    // 验证配置
-    model_config.validate()?;
+    provider.validate()?;
 
     let mut store = ConfigStore::new()?;
-    store.add_model(model_config)?;
+    store.add_provider(provider)?;
 
-    print_success(&format!("模型配置已添加: {}", name));
+    print_success(&format!("供应商已添加: {}", name));
+    println!("  协议: {}", protocol);
     println!("  可用模型: {}", models.join(", "));
 
     if test {
         println!("\n正在测试连接...");
-        execute_test_model(name, None)?;
+        execute_test_provider(name, None)?;
     }
 
     Ok(())
 }
 
-fn execute_list_models() -> anyhow::Result<()> {
+fn execute_list_providers() -> anyhow::Result<()> {
     let store = ConfigStore::new()?;
-    let models = store.list_models();
+    let providers = store.list_providers();
 
-    if models.is_empty() {
-        print_warning("当前没有配置任何模型");
-        print_info("使用 'asw model add <name>' 添加模型配置");
+    if providers.is_empty() {
+        print_warning("当前没有配置任何供应商");
+        print_info("使用 'asw provider add <name>' 添加供应商");
     } else {
         println!();
-        println!("{}", format_models_table(models));
+        println!("{}", format_providers_table(providers));
     }
 
     Ok(())
 }
 
-fn execute_remove_model(name: &str) -> anyhow::Result<()> {
+fn execute_remove_provider(name: &str) -> anyhow::Result<()> {
     let mut store = ConfigStore::new()?;
-    store.remove_model(name)?;
+    store.remove_provider(name)?;
 
-    print_success(&format!("模型配置已删除: {}", name));
+    print_success(&format!("供应商已删除: {}", name));
 
     Ok(())
 }
 
-fn execute_edit_model(
-    name: &str,
-    base_url: Option<&String>,
-    api_key: Option<&String>,
-    models: Option<&Vec<String>>,
-) -> anyhow::Result<()> {
-    let mut store = ConfigStore::new()?;
-
-    if base_url.is_none() && api_key.is_none() && models.is_none() {
-        print_warning("没有指定任何要更新的字段");
-        print_info("使用 --base-url, --api-key, 或 --models 指定要更新的字段");
-        return Ok(());
-    }
-
-    store.edit_model(name, |model_config| {
-        if let Some(url) = base_url {
-            validate_url(url)?;
-            model_config.base_url = url.clone();
-        }
-
-        if let Some(key) = api_key {
-            model_config.api_key = key.clone();
-        }
-
-        if let Some(new_models) = models {
-            if new_models.is_empty() {
-                anyhow::bail!("模型列表不能为空");
-            }
-            model_config.models = new_models.clone();
-            // 更新默认模型
-            if !new_models.contains(&model_config.default_model.clone().unwrap_or_default()) {
-                model_config.default_model = Some(new_models[0].clone());
-            }
-        }
-
-        Ok(())
-    })?;
-
-    print_success(&format!("模型配置已更新: {}", name));
-
-    Ok(())
-}
-
-/// 显示模型配置详情
-fn execute_show_model(name: &str) -> anyhow::Result<()> {
+/// 显示供应商详情
+fn execute_show_provider(name: &str) -> anyhow::Result<()> {
     let store = ConfigStore::new()?;
-    let model_config = store
-        .get_model(name)
-        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+    let provider = store
+        .get_provider(name)
+        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", name))?;
 
-    println!("\n{}", "模型配置详情".green().bold());
+    println!("\n{}", "供应商详情".green().bold());
     println!("{}", "=".repeat(40).green());
     println!();
 
-    println!("{:<15} {}", "名称:", model_config.name);
-    println!("{:<15} {}", "Base URL:", model_config.base_url);
+    println!("{:<15} {}", "名称:", provider.name);
+    println!("{:<15} {}", "Base URL:", provider.base_url);
+    println!("{:<15} {}", "协议:", provider.protocol.as_str());
 
     // API Key 掩码显示
-    let masked_key = if model_config.api_key.len() > 8 {
+    let masked_key = if provider.api_key.len() > 8 {
         format!(
             "{}...{}",
-            &model_config.api_key[..4],
-            &model_config.api_key[model_config.api_key.len() - 4..]
+            &provider.api_key[..4],
+            &provider.api_key[provider.api_key.len() - 4..]
         )
     } else {
         "****".to_string()
     };
     println!("{:<15} {}", "API Key:", masked_key);
 
-    println!("{:<15} {}", "可用模型:", model_config.models.join(", "));
-
-    if let Some(ref default) = model_config.default_model {
-        println!("{:<15} {}", "默认模型:", default);
-    }
+    println!("{:<15} {}", "可用模型:", provider.models.join(", "));
 
     println!();
 
     Ok(())
 }
 
-/// 测试模型连接
-fn execute_test_model(name: &str, specific_model: Option<&String>) -> anyhow::Result<()> {
+/// 测试供应商连接
+fn execute_test_provider(name: &str, specific_model: Option<&String>) -> anyhow::Result<()> {
     use reqwest::blocking::Client;
     use std::time::Instant;
 
     let store = ConfigStore::new()?;
-    let model_config = store
-        .get_model(name)
-        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+    let provider = store
+        .get_provider(name)
+        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", name))?;
 
     println!("\n{}", format!("测试 {} 连接...", name).cyan());
 
@@ -304,15 +248,15 @@ fn execute_test_model(name: &str, specific_model: Option<&String>) -> anyhow::Re
     print!("  检查 API 端点... ");
     let start = Instant::now();
 
-    let test_url = if model_config.base_url.ends_with("/v1") || model_config.base_url.ends_with("/v1/") {
-        format!("{}/models", model_config.base_url.trim_end_matches('/'))
+    let test_url = if provider.base_url.ends_with("/v1") || provider.base_url.ends_with("/v1/") {
+        format!("{}/models", provider.base_url.trim_end_matches('/'))
     } else {
-        format!("{}/v1/models", model_config.base_url.trim_end_matches('/'))
+        format!("{}/v1/models", provider.base_url.trim_end_matches('/'))
     };
 
     let response = client
         .get(&test_url)
-        .header("Authorization", format!("Bearer {}", model_config.api_key))
+        .header("Authorization", format!("Bearer {}", provider.api_key))
         .send();
 
     match response {
@@ -327,10 +271,10 @@ fn execute_test_model(name: &str, specific_model: Option<&String>) -> anyhow::Re
                 // 测试特定模型
                 let test_model = specific_model
                     .cloned()
-                    .or_else(|| model_config.get_default_model().map(|s| s.to_string()));
+                    .or_else(|| provider.get_default_model().map(|s| s.to_string()));
 
                 if let Some(model_name) = test_model {
-                    if model_config.models.contains(&model_name) {
+                    if provider.has_model(&model_name) {
                         println!("  {} 模型 {} 可用", "✓".green(), model_name);
                     } else {
                         println!("  {} 模型 {} 不在配置列表中", "⚠".yellow(), model_name);
@@ -361,9 +305,9 @@ fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
     use reqwest::blocking::Client;
 
     let store = ConfigStore::new()?;
-    let model_config = store
-        .get_model(name)
-        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+    let provider = store
+        .get_provider(name)
+        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", name))?;
 
     println!("{}", format!("正在从 {} 获取模型列表...", name).cyan());
 
@@ -371,15 +315,15 @@ fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
         .timeout(std::time::Duration::from_secs(10))
         .build()?;
 
-    let fetch_url = if model_config.base_url.ends_with("/v1") || model_config.base_url.ends_with("/v1/") {
-        format!("{}/models", model_config.base_url.trim_end_matches('/'))
+    let fetch_url = if provider.base_url.ends_with("/v1") || provider.base_url.ends_with("/v1/") {
+        format!("{}/models", provider.base_url.trim_end_matches('/'))
     } else {
-        format!("{}/v1/models", model_config.base_url.trim_end_matches('/'))
+        format!("{}/v1/models", provider.base_url.trim_end_matches('/'))
     };
 
     let response = client
         .get(&fetch_url)
-        .header("Authorization", format!("Bearer {}", model_config.api_key))
+        .header("Authorization", format!("Bearer {}", provider.api_key))
         .send()?;
 
     if !response.status().is_success() {
@@ -408,17 +352,14 @@ fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
 
     // 询问是否添加
     println!();
-    print!("是否添加这些模型到配置? [y/N]: ");
+    print!("是否添加这些模型到供应商 {} ? [y/N]: ", name);
     let mut input = String::new();
     std::io::stdin().read_line(&mut input)?;
 
     if input.trim().to_lowercase() == "y" {
         let mut store = ConfigStore::new()?;
-        store.edit_model(name, |config| {
-            config.models = models.clone();
-            if config.default_model.is_none() && !models.is_empty() {
-                config.default_model = Some(models[0].clone());
-            }
+        store.edit_provider(name, |p| {
+            p.models = models.clone();
             Ok(())
         })?;
 
@@ -428,62 +369,9 @@ fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// 批量添加模型
-fn execute_batch_add_models(name: &str, file: Option<&String>) -> anyhow::Result<()> {
-    use std::io::{self, BufRead};
-
-    let models = if let Some(file_path) = file {
-        // 从文件读取
-        let content = std::fs::read_to_string(file_path)?;
-        content
-            .lines()
-            .filter(|line| !line.trim().is_empty())
-            .flat_map(|line| {
-                line.split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect::<Vec<_>>()
-            })
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<_>>()
-    } else {
-        // 从 stdin 读取
-        println!("请输入模型列表（每行一个，或逗号分隔）:");
-        let stdin = io::stdin();
-        stdin
-            .lock()
-            .lines()
-            .filter_map(|line| line.ok())
-            .filter(|line| !line.trim().is_empty())
-            .flat_map(|line| {
-                line.split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect::<Vec<_>>()
-            })
-            .filter(|s| !s.is_empty())
-            .collect::<Vec<_>>()
-    };
-
-    if models.is_empty() {
-        anyhow::bail!("未提供任何模型");
-    }
-
-    println!("将添加 {} 个模型到 {}:", models.len(), name);
-    for model in &models {
-        println!("  - {}", model);
-    }
-
-    let mut store = ConfigStore::new()?;
-    store.edit_model(name, |config| {
-        config.models = models.clone();
-        if config.default_model.is_none() && !models.is_empty() {
-            config.default_model = Some(models[0].clone());
-        }
-        Ok(())
-    })?;
-
-    println!("{} 已添加 {} 个模型到 {}", "✓".green(), models.len(), name);
-
-    Ok(())
+/// 批量添加模型（已移除，保留为兼容入口）
+fn execute_batch_add_models(_name: &str, _file: Option<&String>) -> anyhow::Result<()> {
+    anyhow::bail!("批量添加模型功能已迁移到 provider 命令，请使用 'asw provider add'");
 }
 
 /// 执行 agent detect 命令
@@ -532,7 +420,7 @@ fn execute_detect_agents() -> anyhow::Result<()> {
 
     println!(
         "{}",
-        "提示: 使用 'asw switch <agent> <model>' 切换工具的模型配置".cyan()
+        "提示: 使用 'asw switch <agent> <provider> <model>' 切换工具的模型配置".cyan()
     );
 
     Ok(())
@@ -662,7 +550,7 @@ pub fn execute_show_status() -> anyhow::Result<()> {
     println!();
 
     let store = ConfigStore::new()?;
-    let active_models = store.get_all_active_models();
+    let active = store.get_all_active();
 
     let adapters = all_adapters();
 
@@ -672,8 +560,8 @@ pub fn execute_show_status() -> anyhow::Result<()> {
         let config_path = adapter.config_path()?;
         let _config_exists = config_path.exists();
 
-        let model_name = active_models.get(name).cloned();
-        let status = if model_name.is_some() {
+        let active_info = active.get(name);
+        let status = if active_info.is_some() {
             "✓".green()
         } else if is_installed {
             "⚠".yellow()
@@ -681,7 +569,7 @@ pub fn execute_show_status() -> anyhow::Result<()> {
             "✗".red()
         };
 
-        let model_text = model_name.unwrap_or_else(|| {
+        let model_text = active_info.map(|am| format!("{}/{}", am.provider, am.model)).unwrap_or_else(|| {
             if is_installed {
                 "-".to_string()
             } else {
@@ -690,7 +578,7 @@ pub fn execute_show_status() -> anyhow::Result<()> {
         });
 
         println!(
-            "{:<20} {:<15} {:<40} {}",
+            "{:<20} {:<25} {:<40} {}",
             name.bold(),
             model_text,
             config_path.display().to_string(),
@@ -704,22 +592,17 @@ pub fn execute_show_status() -> anyhow::Result<()> {
     println!();
     println!(
         "{}",
-        "提示: 使用 'asw switch <agent> <model>' 配置工具".cyan()
+        "提示: 使用 'asw switch <agent> <provider> <model>' 配置工具".cyan()
     );
 
     Ok(())
 }
 
-/// 执行 switch 命令
-pub fn execute_switch(agent: &str, model: &str) -> anyhow::Result<()> {
-    // 验证模型配置是否存在
+/// 执行 switch 命令（新版：接受 provider + model 参数）
+pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Result<()> {
+    // 验证供应商是否存在，并解析模型
     let mut store = ConfigStore::new()?;
-    let model_config = store
-        .list_models()
-        .iter()
-        .find(|m| m.name == model)
-        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", model))?
-        .clone();
+    let model_config = store.resolve_model_config(provider, model)?;
 
     // 检测工具是否已安装
     let adapters = all_adapters();
@@ -746,13 +629,13 @@ pub fn execute_switch(agent: &str, model: &str) -> anyhow::Result<()> {
     // 步骤 2: 应用新配置
     println!(
         "{}",
-        format!("正在切换 {} 到 {} 模型...", agent, model).cyan()
+        format!("正在切换 {} 到 {}/{} 模型...", agent, provider, model).cyan()
     );
     adapter.apply(&model_config)?;
-    println!("{}", format!("✓ {} 已切换到 {} 模型", agent, model).green());
+    println!("{}", format!("✓ {} 已切换到 {}/{}", agent, provider, model).green());
 
-    // 步骤 3: 更新 active_models 映射
-    store.update_active_model(agent, model)?;
+    // 步骤 3: 更新 active 映射
+    store.set_active(agent, provider, model)?;
 
     // 步骤 4: 检测环境变量
     println!();
@@ -1252,7 +1135,7 @@ fn execute_batch_switch(
     };
 
     // 执行批量切换
-    let result = batch_switch_agents(adapters_to_switch, model_config);
+    let result = batch_switch_agents(adapters_to_switch, &model_config);
 
     // 显示结果
     println!("\n切换工具 (并发数: {}):", 4);

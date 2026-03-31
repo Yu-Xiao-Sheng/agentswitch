@@ -6,7 +6,7 @@ pub mod args;
 pub mod commands;
 
 pub use args::{BatchCommands, PresetCommands};
-pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ModelCommands};
+pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ProviderCommands};
 
 // Spec 004 新增命令导出 (从 commands.rs 导入，因为那里有 run 实现)
 pub use commands::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
@@ -23,9 +23,9 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Command {
-    /// Model configuration management
+    /// Provider configuration management
     #[command(subcommand)]
-    Model(ModelCommands),
+    Provider(ProviderCommands),
 
     /// Agent tool management
     #[command(subcommand)]
@@ -49,11 +49,13 @@ pub enum Command {
         detailed: bool,
     },
 
-    /// Switch agent tool to a different model
+    /// Switch agent tool to a different provider/model
     Switch {
         /// Agent name (e.g., claude-code, codex, gemini-cli)
         agent: String,
-        /// Model configuration name
+        /// Provider name
+        provider: String,
+        /// Model name
         model: String,
     },
 
@@ -82,13 +84,13 @@ pub enum Command {
 impl Command {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
-            Command::Model(cmd) => cmd.run(),
+            Command::Provider(cmd) => cmd.run(),
             Command::Agent(cmd) => cmd.run(),
             Command::Backup(cmd) => cmd.run(),
             Command::Preset(cmd) => cmd.run(),
             Command::Batch(cmd) => cmd.run(),
             Command::Status { detailed: _ } => commands::execute_show_status(),
-            Command::Switch { agent, model } => commands::execute_switch(agent, model),
+            Command::Switch { agent, provider, model } => commands::execute_switch(agent, provider, model),
             // Spec 004 新命令
             Command::Wizard(cmd) => cmd.run(),
             Command::Doctor(cmd) => cmd.run(),
