@@ -148,16 +148,17 @@ impl BackupManager {
         for entry in entries.flatten() {
             let path = entry.path();
 
-            if path.is_file()
-                && let Ok(metadata) = fs::metadata(&path)
-                && let Ok(modified) = metadata.modified()
-            {
-                let modified_time: chrono::DateTime<chrono::Utc> = modified.into();
-                let age = now.signed_duration_since(modified_time);
+            if path.is_file() {
+                if let Ok(metadata) = fs::metadata(&path) {
+                    if let Ok(modified) = metadata.modified() {
+                        let modified_time: chrono::DateTime<chrono::Utc> = modified.into();
+                        let age = now.signed_duration_since(modified_time);
 
-                if age.num_seconds() > older_seconds {
-                    fs::remove_file(&path)?;
-                    cleaned_count += 1;
+                        if age.num_seconds() > older_seconds {
+                            fs::remove_file(&path)?;
+                            cleaned_count += 1;
+                        }
+                    }
                 }
             }
         }

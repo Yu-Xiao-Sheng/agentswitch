@@ -1,3 +1,10 @@
+//! AgentSwitch - 代码终端代理工具配置切换器
+//!
+//! 支持将任意 OpenAI 协议模型接入到主流 Code Agent 工具中
+
+// 允许未使用的代码（为将来功能准备的代码）
+#![allow(dead_code)]
+
 use anyhow::Result;
 use clap::Parser;
 

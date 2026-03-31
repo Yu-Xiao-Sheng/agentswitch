@@ -6,9 +6,9 @@ use std::path::PathBuf;
 
 /// Gemini CLI settings.json 结构
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, Default)]
+#[allow(non_snake_case)]
 struct GeminiSettings {
     #[serde(default)]
-    #[allow(non_snake_case)]
     defaultModel: Option<GeminiModel>,
 }
 

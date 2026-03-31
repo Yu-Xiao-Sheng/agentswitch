@@ -306,7 +306,7 @@ pub fn global_registry() -> &'static AdapterRegistry {
 
         // 自动注册内置适配器
         let _ = registry.register(
-            "test-list",
+            "claude-code",
             Box::new(crate::agents::claude_code::ClaudeCodeAdapter::new()),
         );
         let _ = registry.register("codex", Box::new(crate::agents::codex::CodexAdapter::new()));
@@ -314,6 +314,8 @@ pub fn global_registry() -> &'static AdapterRegistry {
             "gemini-cli",
             Box::new(crate::agents::gemini::GeminiAdapter::new()),
         );
+        let _ = registry.register("qwen", Box::new(crate::agents::qwen::QwenAdapter::new()));
+        let _ = registry.register("grok", Box::new(crate::agents::grok::GrokAdapter::new()));
 
         registry
     })

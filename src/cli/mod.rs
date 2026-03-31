@@ -1,6 +1,6 @@
 //! CLI 命令行界面模块
 
-use clap::{CommandFactory, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 pub mod args;
 pub mod commands;
@@ -8,8 +8,8 @@ pub mod commands;
 pub use args::{BatchCommands, PresetCommands};
 pub use commands::{AgentCommands, BackupCommands, ModelCommands};
 
-// Spec 004 新增命令导出
-pub use args::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
+// Spec 004 新增命令导出 (从 commands.rs 导入，因为那里有 run 实现)
+pub use commands::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]
@@ -97,6 +97,6 @@ impl Command {
 impl Cli {
     /// 获取 clap Command 实例（用于生成补全脚本）
     pub fn command() -> clap::Command {
-        Cli::command()
+        <Self as clap::CommandFactory>::command()
     }
 }
