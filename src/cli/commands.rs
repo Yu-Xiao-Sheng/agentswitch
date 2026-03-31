@@ -3,6 +3,11 @@
 use crate::agents::{all_adapters, global_registry};
 use crate::backup::BackupManager;
 use crate::config::{ConfigStore, Protocol, Provider};
+use crate::error::{
+    invalid_api_key_error, invalid_model_name_error, invalid_url_error, model_not_in_provider_error,
+    network_connection_error, print_error, provider_not_found_error, tool_not_installed_error,
+    AswError,
+};
 use crate::output::{format_providers_table, print_info, print_success, print_warning};
 use crate::utils::{validate_model_name, validate_url};
 use colored::Colorize;
@@ -132,17 +137,50 @@ fn execute_add_provider(
     protocol: &str,
     test: bool,
 ) -> anyhow::Result<()> {
-    validate_model_name(name)?;
-    validate_url(base_url)?;
+    // 验证模型名称
+    if let Err(e) = validate_model_name(name) {
+        let err = invalid_model_name_error(name, &e.to_string());
+        print_error(&err);
+        std::process::exit(1);
+    }
+
+    // 验证 URL 格式
+    if let Err(e) = validate_url(base_url) {
+        let err = invalid_url_error(base_url, &e.to_string());
+        print_error(&err);
+        std::process::exit(1);
+    }
 
     if models.is_empty() {
-        anyhow::bail!("至少需要指定一个模型");
+        let err = AswError::config("至少需要指定一个模型")
+            .field("models")
+            .suggest("使用 --models 参数指定模型，例如: --models gpt-4,gpt-3.5-turbo");
+        print_error(&err);
+        std::process::exit(1);
+    }
+
+    // 验证 API Key 格式（基本检查）
+    if api_key.len() < 10 {
+        let preview = if api_key.len() > 4 {
+            &api_key[..4]
+        } else {
+            api_key
+        };
+        let err = invalid_api_key_error(preview);
+        print_error(&err);
+        std::process::exit(1);
     }
 
     let proto = match protocol.to_lowercase().as_str() {
         "openai" => Protocol::OpenAI,
         "anthropic" => Protocol::Anthropic,
-        _ => anyhow::bail!("不支持的协议类型: {} (支持: openai, anthropic)", protocol),
+        _ => {
+            let err = AswError::config(format!("不支持的协议类型: {}", protocol))
+                .field("protocol")
+                .suggest("支持的协议: openai, anthropic");
+            print_error(&err);
+            std::process::exit(1);
+        }
     };
 
     let provider = Provider::new(
@@ -153,7 +191,11 @@ fn execute_add_provider(
         models.to_vec(),
     );
 
-    provider.validate()?;
+    if let Err(e) = provider.validate() {
+        let err = AswError::config(e.to_string()).suggest("请检查配置参数是否正确");
+        print_error(&err);
+        std::process::exit(1);
+    }
 
     let mut store = ConfigStore::new()?;
     store.add_provider(provider)?;
@@ -234,15 +276,29 @@ fn execute_test_provider(name: &str, specific_model: Option<&String>) -> anyhow:
     use std::time::Instant;
 
     let store = ConfigStore::new()?;
-    let provider = store
-        .get_provider(name)
-        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", name))?;
+    let provider = match store.get_provider(name) {
+        Some(p) => p,
+        None => {
+            let err = provider_not_found_error(name);
+            print_error(&err);
+            std::process::exit(1);
+        }
+    };
 
     println!("\n{}", format!("测试 {} 连接...", name).cyan());
 
-    let client = Client::builder()
+    let client = match Client::builder()
         .timeout(std::time::Duration::from_secs(10))
-        .build()?;
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            let err = AswError::network(format!("无法创建 HTTP 客户端: {}", e))
+                .suggest("检查系统网络配置");
+            print_error(&err);
+            std::process::exit(1);
+        }
+    };
 
     // 测试 API 端点可达性
     print!("  检查 API 端点... ");
@@ -284,16 +340,40 @@ fn execute_test_provider(name: &str, specific_model: Option<&String>) -> anyhow:
                 println!();
                 println!("{}", "测试结果: 成功".green().bold());
             } else {
-                println!("  {} API 返回错误: {}", "✗".red(), resp.status());
+                let status = resp.status();
+                let err = if status.as_u16() == 401 {
+                    AswError::provider("API Key 无效或已过期", name)
+                        .suggest("请检查 API Key 是否正确，或在提供商控制台重新生成")
+                } else if status.as_u16() == 403 {
+                    AswError::provider("访问被拒绝，权限不足", name)
+                        .suggest("请检查 API Key 是否有访问权限")
+                } else if status.as_u16() == 404 {
+                    AswError::provider("API 端点不存在", name)
+                        .suggest("请检查 base_url 配置是否正确")
+                } else if status.as_u16() == 429 {
+                    AswError::provider("请求频率超限", name)
+                        .suggest("请稍后重试，或检查配额限制")
+                } else if status.as_u16() >= 500 {
+                    AswError::provider(format!("服务器错误: {}", status), name)
+                        .suggest("API 服务暂时不可用，请稍后重试")
+                } else {
+                    AswError::provider(format!("API 返回错误: {}", status), name)
+                        .suggest("请检查配置或联系提供商")
+                };
+
+                println!("  {} API 返回错误: {}", "✗".red(), status);
                 println!();
-                println!("{}", "测试结果: 失败".red().bold());
+                print_error(&err);
+                std::process::exit(1);
             }
         }
         Err(e) => {
             println!("{}", "✗".red());
-            println!("  {} 连接失败: {}", "✗".red(), e);
+            let error_msg = e.to_string();
+            let err = network_connection_error(&provider.base_url, &error_msg);
             println!();
-            println!("{}", "测试结果: 失败".red().bold());
+            print_error(&err);
+            std::process::exit(1);
         }
     }
 
@@ -602,19 +682,38 @@ pub fn execute_show_status() -> anyhow::Result<()> {
 pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Result<()> {
     // 验证供应商是否存在
     let mut store = ConfigStore::new()?;
-    let provider_obj = store
-        .get_provider(provider)
-        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", provider))?;
+    let provider_obj = match store.get_provider(provider) {
+        Some(p) => p,
+        None => {
+            let err = provider_not_found_error(provider);
+            print_error(&err);
+            std::process::exit(1);
+        }
+    };
+
+    // 验证模型是否在供应商的模型列表中
+    if !provider_obj.has_model(model) {
+        let err = model_not_in_provider_error(model, provider, &provider_obj.models);
+        print_error(&err);
+        std::process::exit(1);
+    }
 
     // 检测工具是否已安装
     let adapters = all_adapters();
-    let adapter = adapters
-        .into_iter()
-        .find(|a| a.name() == agent)
-        .ok_or_else(|| anyhow::anyhow!("未知的工具: {}", agent))?;
+    let adapter = match adapters.into_iter().find(|a| a.name() == agent) {
+        Some(a) => a,
+        None => {
+            let err = AswError::tool(format!("未知的工具: {}", agent), agent)
+                .suggest("运行 'asw agent list' 查看所有支持的工具有");
+            print_error(&err);
+            std::process::exit(1);
+        }
+    };
 
     if !adapter.detect()? {
-        anyhow::bail!("未检测到 {} 安装", agent);
+        let err = tool_not_installed_error(agent);
+        print_error(&err);
+        std::process::exit(1);
     }
 
     // 检查配置文件是否存在
@@ -633,7 +732,14 @@ pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Resul
         "{}",
         format!("正在切换 {} 到 {}/{} 模型...", agent, provider, model).cyan()
     );
-    adapter.apply(provider_obj, model)?;
+    
+    if let Err(e) = adapter.apply(provider_obj, model) {
+        let err = AswError::tool(format!("应用配置失败: {}", e), agent)
+            .suggest("检查配置文件权限，或运行 'asw doctor' 诊断问题");
+        print_error(&err);
+        std::process::exit(1);
+    }
+    
     println!("{}", format!("✓ {} 已切换到 {}/{}", agent, provider, model).green());
 
     // 步骤 3: 更新 active 映射

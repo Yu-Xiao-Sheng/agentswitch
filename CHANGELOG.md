@@ -2,6 +2,58 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.4] - 2026-03-31
+
+### Added
+- **智能错误提示系统**: 友好的错误消息、原因分析和解决建议
+  - 统一错误类型系统 `AswError`，支持 Config/Network/Permission/Provider/Tool/Crypto/Git 等类型
+  - 错误消息包含类型、描述、可能原因、建议操作
+  - 错误输出格式化显示，使用颜色区分不同信息
+
+### Changed
+- **改进 provider add 命令错误提示**:
+  - URL 格式验证失败时显示正确的 URL 格式示例
+  - API Key 格式验证失败时提供检查建议
+  - 模型名称验证失败时显示命名规则
+  - 协议类型错误时显示支持的协议列表
+
+- **改进 provider test 命令错误提示**:
+  - 网络连接失败时提供诊断建议（检查 URL、测试网络、配置代理）
+  - HTTP 错误码针对性提示（401/403/404/429/5xx）
+  - 显示完整的 API 端点 URL 和响应状态
+
+- **改进 switch 命令错误提示**:
+  - 供应商不存在时提示使用 `asw provider list` 查看
+  - 模型不在列表时显示可用模型
+  - 工具未安装时显示安装命令
+  - 配置应用失败时提示运行 `asw doctor` 诊断
+
+### Documentation
+- 新增设计文档: `docs/superpowers/plans/2026-03-31-smart-error-messages.md`
+
+### Error Output Format
+```
+✗ 错误
+
+  类型: 网络错误
+  URL: https://api.xxx.com/v1
+  描述: 无法连接到 API 端点
+
+可能的原因:
+  1. API 地址错误
+  2. 网络连接问题
+  3. 需要配置代理
+  4. API 服务不可用
+
+建议操作:
+  • 检查 base_url 配置是否正确
+  • 测试网络连接: ping <api-host>
+  • 如需代理，设置环境变量: export HTTP_PROXY=http://proxy:port
+  • 运行 'asw provider test <name> --verbose' 获取详细诊断
+```
+
+---
+
 ## [0.8.3] - 2026-03-31
 
 ### Added
