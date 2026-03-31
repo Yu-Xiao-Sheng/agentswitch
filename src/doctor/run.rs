@@ -84,21 +84,31 @@ fn detect_tool(adapter: &dyn AgentAdapter) -> ToolDetection {
     let name = adapter.name().to_string();
     let display_name = adapter.name().to_string(); // 可以使用更好的显示名称
 
-    // 检测可执行文件
-    let (status, executable_path, version) = which::which(adapter.name())
-        .ok()
-        .map(|path| {
-            // 获取版本
-            let version = std::process::Command::new(&path)
+    // 使用 adapter 的 detect 方法检测
+    let detected = adapter.detect().unwrap_or(false);
+
+    let (status, executable_path, version) = if detected {
+        // 尝试获取可执行文件路径和版本
+        let exe_name = match adapter.name() {
+            "claude-code" => "claude",
+            // 其他适配器保持原名
+            other => other,
+        };
+
+        let path = which::which(exe_name).ok();
+        let version = path.as_ref().and_then(|p| {
+            std::process::Command::new(p)
                 .arg("--version")
                 .output()
                 .ok()
                 .and_then(|output| String::from_utf8(output.stdout).ok())
-                .map(|s| s.trim().to_string());
+                .map(|s| s.trim().to_string())
+        });
 
-            (ToolStatus::Installed { healthy: true }, Some(path), version)
-        })
-        .unwrap_or((ToolStatus::NotInstalled, None, None));
+        (ToolStatus::Installed { healthy: true }, path, version)
+    } else {
+        (ToolStatus::NotInstalled, None, None)
+    };
 
     // 查找配置文件
     let config_path = adapter.config_path().ok();
