@@ -314,6 +314,10 @@ pub fn global_registry() -> &'static AdapterRegistry {
             "gemini-cli",
             Box::new(crate::agents::gemini::GeminiAdapter::new()),
         );
+        let _ = registry.register(
+            "opencode",
+            Box::new(crate::agents::opencode::OpenCodeAdapter::new()),
+        );
         let _ = registry.register("qwen", Box::new(crate::agents::qwen::QwenAdapter::new()));
         let _ = registry.register("grok", Box::new(crate::agents::grok::GrokAdapter::new()));
 

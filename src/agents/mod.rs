@@ -3,6 +3,7 @@ pub mod claude_code;
 pub mod codex;
 pub mod gemini;
 pub mod grok;
+pub mod opencode;
 pub mod qwen;
 pub mod registry;
 
@@ -16,6 +17,7 @@ pub fn all_adapters() -> Vec<Box<dyn AgentAdapter>> {
         Box::new(claude_code::ClaudeCodeAdapter::new()),
         Box::new(codex::CodexAdapter::new()),
         Box::new(gemini::GeminiAdapter::new()),
+        Box::new(opencode::OpenCodeAdapter::new()),
         Box::new(qwen::QwenAdapter::new()),
         Box::new(grok::GrokAdapter::new()),
     ]
