@@ -1,6 +1,6 @@
 # AgentSwitch
 
-> 一个通用的代码终端代理工具配置切换器，支持将任意 OpenAI 协议模型接入到主流 Code Agent 工具中。
+> 一个通用的 Code Agent CLI 工具配置切换器，支持将任意 OpenAI 或 Anthropic 协议模型接入到主流 Code Agent 工具中。
 
 [![Rust](https://img.shields.io/badge/Rust-2024-orange.svg)](https://www.rust-lang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
