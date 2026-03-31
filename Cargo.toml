@@ -1,6 +1,6 @@
 [package]
 name = "asw"
-version = "0.8.0"
+version = "0.8.1"
 edition = "2021"
 authors = ["Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"]
 description = "一个通用的 Code Agent 工具配置切换器，支持将任意 OpenAI/Anthropic 协议模型接入到主流 Code Agent CLI 工具中"

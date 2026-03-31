@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file.
 
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.8.0] - 2026-03-31
+
+### 重构
+**完全重构为 Provider-Model 架构**
+
+#### 新数据模型
+- `Provider`: 供应商（base_url, api_key, models）
+- `ActiveModel`: 当前激活配置（tool -> {provider, model})
+
+#### 新命令
+- `asw provider add/list/show/remove/test`
+- `asw switch <tool> <provider> <model>`
+- `asw status`
+
+#### 配置文件
+```toml
+# ~/.agentswitch/config.toml
+
+[[providers]]
+name = "zhipu"
+base_url = "https://open.bigmodel.cn/api/anthropic"
+api_key = "your-key"
+protocol = "anthropic"
+models = ["glm-4.7-flash", "glm-5"]
+
+[active.claude-code]
+provider = "zhipu"
+model = "glm-4.7-flash"
+```
+
+#### 废弃的命令
+- `model` 命令（被 `provider` 替代）
+- `model fetch/batch` 命令合并到 `provider fetch-models`
+
+---
+
 ## [0.7.0] - 2026-03-31
 
 ### Added
