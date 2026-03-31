@@ -2,7 +2,7 @@
 
 use crate::agents::{all_adapters, global_registry};
 use crate::backup::BackupManager;
-use crate::config::{ConfigStore, ModelConfig, Protocol, Provider};
+use crate::config::{ConfigStore, Protocol, Provider};
 use crate::output::{format_providers_table, print_info, print_success, print_warning};
 use crate::utils::{validate_model_name, validate_url};
 use colored::Colorize;
