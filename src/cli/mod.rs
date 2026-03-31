@@ -6,7 +6,7 @@ pub mod args;
 pub mod commands;
 
 pub use args::{BatchCommands, PresetCommands};
-pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ProviderCommands};
+pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ProviderCommands, UpdateCommands};
 
 // Spec 004 新增命令导出 (从 commands.rs 导入，因为那里有 run 实现)
 pub use commands::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
@@ -79,6 +79,10 @@ pub enum Command {
     /// Crypto key management
     #[command(subcommand)]
     Crypto(CryptoCommands),
+
+    /// 检查更新
+    #[command(subcommand)]
+    Update(UpdateCommands),
 }
 
 impl Command {
@@ -97,6 +101,8 @@ impl Command {
             Command::Completion(cmd) => cmd.run(),
             Command::Sync(cmd) => cmd.run(),
             Command::Crypto(cmd) => cmd.run(),
+            // 更新检查命令
+            Command::Update(cmd) => cmd.run(),
         }
     }
 }

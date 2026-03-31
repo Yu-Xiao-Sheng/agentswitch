@@ -41,9 +41,15 @@ impl PresetAppplier {
                 .find(|a| a.name() == agent_name.as_str())
                 .ok_or_else(|| anyhow::anyhow!("工具未注册: {}", agent_name))?;
 
+            // 转换为 Provider
+            let provider = model_config.to_provider();
+            let model = model_config.get_default_model()
+                .or_else(|| model_config.models.first().map(|s| s.as_str()))
+                .ok_or_else(|| anyhow::anyhow!("模型配置中没有可用模型"))?;
+
             // 应用配置
             adapter
-                .apply(model_config)
+                .apply(&provider, model)
                 .map_err(|e| anyhow::anyhow!("应用失败: 工具={}, 原因={}", agent_name, e))?;
         }
 
@@ -80,8 +86,14 @@ impl PresetAppplier {
                 .find(|a| a.name() == agent_name.as_str())
                 .ok_or_else(|| anyhow::anyhow!("工具未注册: {}", agent_name))?;
 
+            // 转换为 Provider
+            let provider = model_config.to_provider();
+            let model = model_config.get_default_model()
+                .or_else(|| model_config.models.first().map(|s| s.as_str()))
+                .ok_or_else(|| anyhow::anyhow!("模型配置中没有可用模型"))?;
+
             adapter
-                .apply(model_config)
+                .apply(&provider, model)
                 .map_err(|e| anyhow::anyhow!("应用失败: 工具={}, 原因={}", agent_name, e))?;
         }
 

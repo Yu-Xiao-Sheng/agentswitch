@@ -600,9 +600,11 @@ pub fn execute_show_status() -> anyhow::Result<()> {
 
 /// 执行 switch 命令（新版：接受 provider + model 参数）
 pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Result<()> {
-    // 验证供应商是否存在，并解析模型
+    // 验证供应商是否存在
     let mut store = ConfigStore::new()?;
-    let model_config = store.resolve_model_config(provider, model)?;
+    let provider_obj = store
+        .get_provider(provider)
+        .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", provider))?;
 
     // 检测工具是否已安装
     let adapters = all_adapters();
@@ -631,7 +633,7 @@ pub fn execute_switch(agent: &str, provider: &str, model: &str) -> anyhow::Resul
         "{}",
         format!("正在切换 {} 到 {}/{} 模型...", agent, provider, model).cyan()
     );
-    adapter.apply(&model_config)?;
+    adapter.apply(provider_obj, model)?;
     println!("{}", format!("✓ {} 已切换到 {}/{}", agent, provider, model).green());
 
     // 步骤 3: 更新 active 映射
@@ -1108,16 +1110,49 @@ fn execute_batch_switch(
     use crate::batch::batch_switch_agents;
     use crate::config::ConfigStore;
 
-    // 验证模型配置存在
-    let config_store = ConfigStore::new()?;
-    let model_config = config_store
-        .get_model(model)
-        .ok_or_else(|| anyhow::anyhow!("模型配置不存在: {}", model))?;
+    // 解析 model 参数，格式可能是 "provider:model" 或仅 "model"
+    let (provider_name, model_name) = if model.contains(':') {
+        let parts: Vec<&str> = model.split(':').collect();
+        if parts.len() != 2 {
+            anyhow::bail!("无效的模型格式，应为 'provider:model' 或 'model'");
+        }
+        (parts[0].to_string(), parts[1].to_string())
+    } else {
+        // 仅提供模型名称，需要查找对应的 provider
+        ("".to_string(), model.to_string())
+    };
 
-    println!("\n批量切换到模型: {}", model);
+    let config_store = ConfigStore::new()?;
+
+    // 获取 Provider
+    let provider_obj = if provider_name.is_empty() {
+        // 查找包含该模型的 provider
+        config_store
+            .list_providers()
+            .iter()
+            .find(|p| p.has_model(&model_name))
+            .ok_or_else(|| anyhow::anyhow!("未找到包含模型 '{}' 的供应商", model_name))?
+            .clone()
+    } else {
+        config_store
+            .get_provider(&provider_name)
+            .ok_or_else(|| anyhow::anyhow!("供应商 '{}' 不存在", provider_name))?
+            .clone()
+    };
+
+    // 验证模型是否存在于 provider 中
+    if !provider_obj.has_model(&model_name) {
+        anyhow::bail!(
+            "模型 '{}' 不在供应商 '{}' 的模型列表中",
+            model_name,
+            provider_obj.name
+        );
+    }
+
+    println!("\n批量切换到模型: {}/{}", provider_obj.name, model_name);
 
     if dry_run {
-        println!("\n[模拟运行] 将切换以下工具到 {}:\n", model);
+        println!("\n[模拟运行] 将切换以下工具到 {}/{}:\n", provider_obj.name, model_name);
         return Ok(());
     }
 
@@ -1135,7 +1170,7 @@ fn execute_batch_switch(
     };
 
     // 执行批量切换
-    let result = batch_switch_agents(adapters_to_switch, &model_config);
+    let result = batch_switch_agents(adapters_to_switch, &provider_obj, &model_name);
 
     // 显示结果
     println!("\n切换工具 (并发数: {}):", 4);
@@ -1557,4 +1592,47 @@ impl SyncCommands {
             SyncCommands::Status => crate::sync::config::run_sync_status(),
         }
     }
+}
+
+/// 更新检查命令实现
+#[derive(clap::Subcommand, Debug)]
+pub enum UpdateCommands {
+    /// 检查更新
+    Check {
+        /// 强制检查（忽略缓存）
+        #[arg(short, long)]
+        force: bool,
+    },
+}
+
+impl UpdateCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        match self {
+            UpdateCommands::Check { force } => execute_update_check(*force),
+        }
+    }
+}
+
+/// 执行更新检查
+fn execute_update_check(force: bool) -> anyhow::Result<()> {
+    use crate::update::{check_for_update, display_update_notification};
+    
+    println!("正在检查更新...");
+    
+    match check_for_update(force) {
+        Ok(info) => {
+            display_update_notification(&info);
+            
+            if info.has_update {
+                if let Some(url) = &info.release_url {
+                    println!("📄 发布说明: {}", url);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("❌ 检查更新失败: {}", e);
+        }
+    }
+    
+    Ok(())
 }

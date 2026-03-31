@@ -70,6 +70,29 @@ impl ModelConfig {
 
         Ok(())
     }
+
+    /// 转换为 Provider（用于 AgentAdapter）
+    pub fn to_provider(&self) -> crate::config::Provider {
+        use crate::config::Protocol;
+        
+        // 根据 base_url 或 name 推断协议类型
+        let protocol = if self.base_url.contains("anthropic")
+            || self.name.contains("anthropic")
+            || self.name.contains("claude")
+        {
+            Protocol::Anthropic
+        } else {
+            Protocol::OpenAI
+        };
+
+        crate::config::Provider::new(
+            self.name.clone(),
+            self.base_url.clone(),
+            self.api_key.clone(),
+            protocol,
+            self.models.clone(),
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]

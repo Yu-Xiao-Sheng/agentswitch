@@ -425,17 +425,18 @@ asw
 │   ├── status       # 查看同步状态
 │   ├── push         # 推送到远程
 │   └── pull         # 从远程拉取
-└── crypto            # 加密密钥管理
-    ├── keygen       # 生成加密密钥
-    ├── key-export   # 导出密钥
-    ├── key-import   # 导入密钥
-    └── status       # 查看加密状态
+├── crypto            # 加密密钥管理
+│   ├── keygen       # 生成加密密钥
+│   ├── key-export   # 导出密钥
+│   ├── key-import   # 导入密钥
+│   └── status       # 查看加密状态
+└── update            # 检查更新
+    └── check        # 检查是否有新版本
 ```
 
 ### 计划中的命令
 ```
 asw
-├── update            # 检测并安装新版本
 ├── benchmark         # 性能测试模式
 │   ├── run          # 运行性能测试
 │   └── report       # 生成对比报告

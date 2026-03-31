@@ -1,6 +1,6 @@
 [package]
 name = "asw"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2021"
 authors = ["Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"]
 description = "一个通用的 Code Agent 工具配置切换器，支持将任意 OpenAI/Anthropic 协议模型接入到主流 Code Agent CLI 工具中"
@@ -59,6 +59,9 @@ base64 = "0.21"
 
 # HTTP 客户端（用于模型测试和获取）
 reqwest = { version = "0.12", features = ["blocking", "json"] }
+
+# 版本比较（用于更新检测）
+semver = { version = "1.0", features = ["serde"] }
 
 [dev-dependencies]
 # 测试依赖

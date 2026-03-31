@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.3] - 2026-03-31
+
+### Added
+- **自动更新检测**: 检查 crates.io/GitHub 上的新版本
+  - `asw update check` - 手动检查更新
+  - `asw update check --force` - 强制检查（忽略缓存）
+  - 启动时自动检查（带 24 小时缓存）
+  - 显示更新提示和发布说明链接
+- **版本缓存**: 24 小时内不重复检查，减少 API 调用
+- **降级策略**: 优先从 crates.io 获取版本，失败则从 GitHub 获取
+
+### Changed
+- **命令参考**: 将 `update` 命令从"计划中的命令"移动到"当前可用命令"
+
+---
+
 ## [0.8.2] - 2026-03-31
 
 ### Documentation

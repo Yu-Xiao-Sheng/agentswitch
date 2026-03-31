@@ -21,12 +21,17 @@ mod io;
 mod output;
 mod presets;
 mod sync;
+mod update;
 mod utils;
 mod wizard;
 
 use cli::Cli;
 
 fn main() -> Result<()> {
+    // 启动时检查更新（静默模式，只在有更新时显示）
+    // 使用缓存机制，24小时内不重复检查
+    crate::update::check_on_startup();
+
     let cli = Cli::parse();
 
     if let Err(e) = cli.command.run() {
