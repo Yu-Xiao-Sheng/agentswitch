@@ -34,7 +34,7 @@ pub fn format_models_table(models: &[ModelConfig]) -> String {
         } else {
             format!("{:<26}", model.base_url)
         };
-        let model_id = format!("{:<11}", model.model_id);
+        let model_id = format!("{:<11}", model.get_default_model().unwrap_or("N/A"));
         let api_key = mask_api_key(&model.api_key);
 
         output.push_str(&format!(

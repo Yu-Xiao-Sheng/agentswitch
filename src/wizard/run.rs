@@ -289,33 +289,31 @@ impl Wizard {
         std::fs::create_dir_all(&config_dir)?;
 
         // 创建 ModelConfig
-        let model_config = ModelConfig {
-            name: self
-                .state
+        let model_id = self
+            .state
+            .data
+            .get("model_id")
+            .ok_or_else(|| WizardError::Config("Model ID 未设置".to_string()))?
+            .clone();
+
+        let model_config = ModelConfig::new(
+            self.state
                 .data
                 .get("model_name")
                 .ok_or_else(|| WizardError::Config("模型名称未设置".to_string()))?
                 .clone(),
-            base_url: self
-                .state
+            self.state
                 .data
                 .get("base_url")
                 .ok_or_else(|| WizardError::Config("Base URL 未设置".to_string()))?
                 .clone(),
-            api_key: self
-                .state
+            self.state
                 .data
                 .get("api_key")
                 .ok_or_else(|| WizardError::Config("API Key 未设置".to_string()))?
                 .clone(),
-            model_id: self
-                .state
-                .data
-                .get("model_id")
-                .ok_or_else(|| WizardError::Config("Model ID 未设置".to_string()))?
-                .clone(),
-            extra_params: None,
-        };
+            vec![model_id],
+        );
 
         // 保存配置
         let mut store = ConfigStore::new()?;

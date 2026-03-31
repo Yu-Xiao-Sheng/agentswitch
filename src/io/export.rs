@@ -75,7 +75,7 @@ pub fn export_with_model_configs(
             let sanitized = SanitizedModelConfig {
                 api_key: sanitize_api_key(&config.api_key),
                 base_url: config.base_url.clone(),
-                model: config.model_id.clone(),
+                model: config.get_default_model().unwrap_or("").to_string(),
             };
             (name.clone(), sanitized)
         })

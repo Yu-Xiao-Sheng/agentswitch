@@ -104,7 +104,7 @@ impl AgentAdapter for GrokAdapter {
         // 更新 custom_provider 配置
         config.custom_provider = Some(GrokCustomProvider {
             base_url: Some(model_config.base_url.clone()),
-            model: Some(model_config.model_id.clone()),
+            model: Some(model_config.get_default_model().unwrap_or("").to_string()),
         });
 
         // 写回 config.toml

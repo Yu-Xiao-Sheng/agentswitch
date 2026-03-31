@@ -9,20 +9,66 @@ pub struct ModelConfig {
     pub name: String,
     pub base_url: String,
     pub api_key: String,
-    pub model_id: String,
+    #[serde(default)]
+    pub models: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_model: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra_params: Option<HashMap<String, Value>>,
+    // 向后兼容：支持旧的 model_id 字段
+    #[serde(skip_serializing_if = "Option::is_none", rename = "model_id")]
+    pub legacy_model_id: Option<String>,
 }
 
 impl ModelConfig {
-    pub fn new(name: String, base_url: String, api_key: String, model_id: String) -> Self {
+    pub fn new(name: String, base_url: String, api_key: String, models: Vec<String>) -> Self {
+        let default_model = models.first().cloned();
         Self {
             name,
             base_url,
             api_key,
-            model_id,
+            models,
+            default_model,
             extra_params: None,
+            legacy_model_id: None,
         }
+    }
+
+    /// 从旧的 model_id 格式迁移
+    pub fn migrate_from_legacy(&mut self) {
+        if let Some(model_id) = self.legacy_model_id.take() {
+            if self.models.is_empty() {
+                self.models.push(model_id);
+            }
+            if self.default_model.is_none() && !self.models.is_empty() {
+                self.default_model = Some(self.models[0].clone());
+            }
+        }
+    }
+
+    /// 获取默认模型
+    pub fn get_default_model(&self) -> Option<&str> {
+        self.default_model
+            .as_deref()
+            .or_else(|| self.models.first().map(|s| s.as_str()))
+    }
+
+    /// 验证配置
+    pub fn validate(&self) -> anyhow::Result<()> {
+        if self.models.is_empty() {
+            anyhow::bail!("至少需要配置一个模型");
+        }
+
+        if let Some(ref default) = self.default_model {
+            if !self.models.contains(default) {
+                anyhow::bail!(
+                    "默认模型 '{}' 不在模型列表中",
+                    default
+                );
+            }
+        }
+
+        Ok(())
     }
 }
 

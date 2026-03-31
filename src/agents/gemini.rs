@@ -98,7 +98,7 @@ impl AgentAdapter for GeminiAdapter {
 
         settings.defaultModel = Some(GeminiModel {
             api_base_url: Some(model_config.base_url.clone()),
-            model_id: Some(model_config.model_id.clone()),
+            model_id: Some(model_config.get_default_model().unwrap_or("").to_string()),
         });
 
         let content =
@@ -109,7 +109,7 @@ impl AgentAdapter for GeminiAdapter {
         let env_path = config_dir.join(".env");
         let env_content = format!(
             "GOOGLE_GEMINI_BASE_URL={}\nGEMINI_API_KEY={}\nGEMINI_MODEL={}\n",
-            model_config.base_url, model_config.api_key, model_config.model_id
+            model_config.base_url, model_config.api_key, model_config.get_default_model().unwrap_or("")
         );
         fs::write(&env_path, env_content).context("写入 .env 失败")?;
 

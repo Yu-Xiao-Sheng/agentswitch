@@ -128,7 +128,7 @@ impl AgentAdapter for MyToolAdapter {
         config_obj.insert("base_url".to_string(),
                           serde_json::json!(model_config.base_url.clone()));
         config_obj.insert("model".to_string(),
-                          serde_json::json!(model_config.model_id.clone()));
+                          serde_json::json!(model_config.get_default_model().unwrap_or("")));
 
         // 4. 确保配置目录存在
         if let Some(config_dir) = config_path.parent() {
@@ -196,7 +196,7 @@ model: {}
 "#,
             model_config.api_key,
             model_config.base_url,
-            model_config.model_id
+            model_config.get_default_model().unwrap_or("")
         );
 
         // 写入文件
@@ -231,7 +231,7 @@ impl MyToolMultiFileAdapter {
         // 1. 写入主配置文件
         let main_config = config_dir.join("config.json");
         let main_config_content = serde_json::json!({
-            "model": model_config.model_id,
+            "model": model_config.get_default_model().unwrap_or(""),
         });
         fs::write(&main_config, serde_json::to_string_pretty(&main_config_content)?)
             .context("写入主配置失败")?;
@@ -249,7 +249,7 @@ impl MyToolMultiFileAdapter {
         let env_content = format!(
             "MYTOOL_BASE_URL={}\nMYTOOL_MODEL={}\n",
             model_config.base_url,
-            model_config.model_id
+            model_config.get_default_model().unwrap_or("")
         );
         fs::write(&env_config, env_content)
             .context("写入环境配置失败")?;
@@ -288,7 +288,7 @@ MYTOOL_MODEL={}
 "#,
             model_config.api_key,
             model_config.base_url,
-            model_config.model_id
+            model_config.get_default_model().unwrap_or("")
         );
 
         fs::write(&env_path, env_content)

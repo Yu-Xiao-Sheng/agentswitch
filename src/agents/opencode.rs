@@ -269,7 +269,8 @@ impl AgentAdapter for OpenCodeAdapter {
         };
 
         let mut models = HashMap::new();
-        models.insert(model_config.model_id.clone(), model_name);
+        let default_model = model_config.get_default_model().unwrap_or("");
+        models.insert(default_model.to_string(), model_name);
 
         let provider = OpenCodeProvider {
             npm: Some("@ai-sdk/openai-compatible".to_string()),
@@ -283,7 +284,7 @@ impl AgentAdapter for OpenCodeAdapter {
         providers.insert(self.provider_name.clone(), provider);
 
         // 设置默认模型
-        config.model = Some(format!("{}/{}", self.provider_name, model_config.model_id));
+        config.model = Some(format!("{}/{}", self.provider_name, default_model));
 
         // 写回配置文件
         let content = serde_json::to_string_pretty(&config).context("序列化 opencode.json 失败")?;

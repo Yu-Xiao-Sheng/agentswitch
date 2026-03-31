@@ -97,7 +97,7 @@ impl AgentAdapter for QwenAdapter {
 
         // 更新配置
         config.api_base_url = Some(model_config.base_url.clone());
-        config.model_id = Some(model_config.model_id.clone());
+        config.model_id = Some(model_config.get_default_model().unwrap_or("").to_string());
 
         // 写回 config.json
         let content = serde_json::to_string_pretty(&config).context("序列化 config.json 失败")?;

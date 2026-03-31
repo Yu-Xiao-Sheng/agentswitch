@@ -17,27 +17,53 @@ use super::args::{BatchCommands, PresetCommands};
 /// Model 管理命令
 #[derive(clap::Subcommand, Debug)]
 pub enum ModelCommands {
+    /// 添加模型配置
     Add {
         name: String,
         #[arg(long)]
         base_url: String,
         #[arg(long)]
         api_key: String,
+        #[arg(long, value_delimiter = ',')]
+        models: Vec<String>,
         #[arg(long)]
-        model: String,
+        test: bool,
     },
+    /// 列出所有模型
     List,
+    /// 删除模型配置
     Remove {
         name: String,
     },
+    /// 编辑模型配置
     Edit {
         name: String,
         #[arg(long)]
         base_url: Option<String>,
         #[arg(long)]
         api_key: Option<String>,
+        #[arg(long, value_delimiter = ',')]
+        models: Option<Vec<String>>,
+    },
+    /// 显示模型配置详情
+    Show {
+        name: String,
+    },
+    /// 测试模型连接
+    Test {
+        name: String,
         #[arg(long)]
         model: Option<String>,
+    },
+    /// 从 API 获取模型列表
+    Fetch {
+        name: String,
+    },
+    /// 批量添加模型
+    Batch {
+        name: String,
+        #[arg(long)]
+        file: Option<String>,
     },
 }
 
@@ -78,16 +104,21 @@ impl ModelCommands {
                 name,
                 base_url,
                 api_key,
-                model,
-            } => execute_add_model(name, base_url, api_key, model),
+                models,
+                test,
+            } => execute_add_model(name, base_url, api_key, models, *test),
             ModelCommands::List => execute_list_models(),
             ModelCommands::Remove { name } => execute_remove_model(name),
             ModelCommands::Edit {
                 name,
                 base_url,
                 api_key,
-                model,
-            } => execute_edit_model(name, base_url.as_ref(), api_key.as_ref(), model.as_ref()),
+                models,
+            } => execute_edit_model(name, base_url.as_ref(), api_key.as_ref(), models.as_ref()),
+            ModelCommands::Show { name } => execute_show_model(name),
+            ModelCommands::Test { name, model } => execute_test_model(name, model.as_ref()),
+            ModelCommands::Fetch { name } => execute_fetch_models(name),
+            ModelCommands::Batch { name, file } => execute_batch_add_models(name, file.as_ref()),
         }
     }
 }
@@ -115,22 +146,36 @@ fn execute_add_model(
     name: &str,
     base_url: &str,
     api_key: &str,
-    model_id: &str,
+    models: &[String],
+    test: bool,
 ) -> anyhow::Result<()> {
     validate_model_name(name)?;
     validate_url(base_url)?;
+
+    if models.is_empty() {
+        anyhow::bail!("至少需要指定一个模型");
+    }
 
     let model_config = ModelConfig::new(
         name.to_string(),
         base_url.to_string(),
         api_key.to_string(),
-        model_id.to_string(),
+        models.to_vec(),
     );
+
+    // 验证配置
+    model_config.validate()?;
 
     let mut store = ConfigStore::new()?;
     store.add_model(model_config)?;
 
     print_success(&format!("模型配置已添加: {}", name));
+    println!("  可用模型: {}", models.join(", "));
+
+    if test {
+        println!("\n正在测试连接...");
+        execute_test_model(name, None)?;
+    }
 
     Ok(())
 }
@@ -163,13 +208,13 @@ fn execute_edit_model(
     name: &str,
     base_url: Option<&String>,
     api_key: Option<&String>,
-    model: Option<&String>,
+    models: Option<&Vec<String>>,
 ) -> anyhow::Result<()> {
     let mut store = ConfigStore::new()?;
 
-    if base_url.is_none() && api_key.is_none() && model.is_none() {
+    if base_url.is_none() && api_key.is_none() && models.is_none() {
         print_warning("没有指定任何要更新的字段");
-        print_info("使用 --base-url, --api-key, 或 --model 指定要更新的字段");
+        print_info("使用 --base-url, --api-key, 或 --models 指定要更新的字段");
         return Ok(());
     }
 
@@ -183,14 +228,260 @@ fn execute_edit_model(
             model_config.api_key = key.clone();
         }
 
-        if let Some(model_id) = model {
-            model_config.model_id = model_id.clone();
+        if let Some(new_models) = models {
+            if new_models.is_empty() {
+                anyhow::bail!("模型列表不能为空");
+            }
+            model_config.models = new_models.clone();
+            // 更新默认模型
+            if !new_models.contains(&model_config.default_model.clone().unwrap_or_default()) {
+                model_config.default_model = Some(new_models[0].clone());
+            }
         }
 
         Ok(())
     })?;
 
     print_success(&format!("模型配置已更新: {}", name));
+
+    Ok(())
+}
+
+/// 显示模型配置详情
+fn execute_show_model(name: &str) -> anyhow::Result<()> {
+    let store = ConfigStore::new()?;
+    let model_config = store
+        .get_model(name)
+        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+
+    println!("\n{}", "模型配置详情".green().bold());
+    println!("{}", "=".repeat(40).green());
+    println!();
+
+    println!("{:<15} {}", "名称:", model_config.name);
+    println!("{:<15} {}", "Base URL:", model_config.base_url);
+
+    // API Key 掩码显示
+    let masked_key = if model_config.api_key.len() > 8 {
+        format!(
+            "{}...{}",
+            &model_config.api_key[..4],
+            &model_config.api_key[model_config.api_key.len() - 4..]
+        )
+    } else {
+        "****".to_string()
+    };
+    println!("{:<15} {}", "API Key:", masked_key);
+
+    println!("{:<15} {}", "可用模型:", model_config.models.join(", "));
+
+    if let Some(ref default) = model_config.default_model {
+        println!("{:<15} {}", "默认模型:", default);
+    }
+
+    println!();
+
+    Ok(())
+}
+
+/// 测试模型连接
+fn execute_test_model(name: &str, specific_model: Option<&String>) -> anyhow::Result<()> {
+    use reqwest::blocking::Client;
+    use std::time::Instant;
+
+    let store = ConfigStore::new()?;
+    let model_config = store
+        .get_model(name)
+        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+
+    println!("\n{}", format!("测试 {} 连接...", name).cyan());
+
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+
+    // 测试 API 端点可达性
+    print!("  检查 API 端点... ");
+    let start = Instant::now();
+
+    let test_url = if model_config.base_url.ends_with("/v1") || model_config.base_url.ends_with("/v1/") {
+        format!("{}/models", model_config.base_url.trim_end_matches('/'))
+    } else {
+        format!("{}/v1/models", model_config.base_url.trim_end_matches('/'))
+    };
+
+    let response = client
+        .get(&test_url)
+        .header("Authorization", format!("Bearer {}", model_config.api_key))
+        .send();
+
+    match response {
+        Ok(resp) => {
+            let elapsed = start.elapsed();
+            println!("{} ({}ms)", "✓".green(), elapsed.as_millis());
+
+            if resp.status().is_success() {
+                println!("  {} API 端点可达", "✓".green());
+                println!("  {} API Key 有效", "✓".green());
+
+                // 测试特定模型
+                let test_model = specific_model
+                    .cloned()
+                    .or_else(|| model_config.get_default_model().map(|s| s.to_string()));
+
+                if let Some(model_name) = test_model {
+                    if model_config.models.contains(&model_name) {
+                        println!("  {} 模型 {} 可用", "✓".green(), model_name);
+                    } else {
+                        println!("  {} 模型 {} 不在配置列表中", "⚠".yellow(), model_name);
+                    }
+                }
+
+                println!();
+                println!("{}", "测试结果: 成功".green().bold());
+            } else {
+                println!("  {} API 返回错误: {}", "✗".red(), resp.status());
+                println!();
+                println!("{}", "测试结果: 失败".red().bold());
+            }
+        }
+        Err(e) => {
+            println!("{}", "✗".red());
+            println!("  {} 连接失败: {}", "✗".red(), e);
+            println!();
+            println!("{}", "测试结果: 失败".red().bold());
+        }
+    }
+
+    Ok(())
+}
+
+/// 从 API 获取模型列表
+fn execute_fetch_models(name: &str) -> anyhow::Result<()> {
+    use reqwest::blocking::Client;
+
+    let store = ConfigStore::new()?;
+    let model_config = store
+        .get_model(name)
+        .ok_or_else(|| anyhow::anyhow!("模型配置 '{}' 不存在", name))?;
+
+    println!("{}", format!("正在从 {} 获取模型列表...", name).cyan());
+
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()?;
+
+    let fetch_url = if model_config.base_url.ends_with("/v1") || model_config.base_url.ends_with("/v1/") {
+        format!("{}/models", model_config.base_url.trim_end_matches('/'))
+    } else {
+        format!("{}/v1/models", model_config.base_url.trim_end_matches('/'))
+    };
+
+    let response = client
+        .get(&fetch_url)
+        .header("Authorization", format!("Bearer {}", model_config.api_key))
+        .send()?;
+
+    if !response.status().is_success() {
+        anyhow::bail!("获取模型列表失败: {}", response.status());
+    }
+
+    // 解析响应
+    let json: serde_json::Value = response.json()?;
+    let models: Vec<String> = if let Some(data) = json.get("data").and_then(|d| d.as_array()) {
+        data.iter()
+            .filter_map(|m| m.get("id").and_then(|id| id.as_str()).map(|s| s.to_string()))
+            .collect()
+    } else {
+        anyhow::bail!("无法解析模型列表响应");
+    };
+
+    if models.is_empty() {
+        println!("{}", "未找到可用模型".yellow());
+        return Ok(());
+    }
+
+    println!("{} 找到 {} 个可用模型:", "✓".green(), models.len());
+    for model in &models {
+        println!("  - {}", model);
+    }
+
+    // 询问是否添加
+    println!();
+    print!("是否添加这些模型到配置? [y/N]: ");
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+
+    if input.trim().to_lowercase() == "y" {
+        let mut store = ConfigStore::new()?;
+        store.edit_model(name, |config| {
+            config.models = models.clone();
+            if config.default_model.is_none() && !models.is_empty() {
+                config.default_model = Some(models[0].clone());
+            }
+            Ok(())
+        })?;
+
+        println!("{} 已添加 {} 个模型到 {}", "✓".green(), models.len(), name);
+    }
+
+    Ok(())
+}
+
+/// 批量添加模型
+fn execute_batch_add_models(name: &str, file: Option<&String>) -> anyhow::Result<()> {
+    use std::io::{self, BufRead};
+
+    let models = if let Some(file_path) = file {
+        // 从文件读取
+        let content = std::fs::read_to_string(file_path)?;
+        content
+            .lines()
+            .filter(|line| !line.trim().is_empty())
+            .flat_map(|line| {
+                line.split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+    } else {
+        // 从 stdin 读取
+        println!("请输入模型列表（每行一个，或逗号分隔）:");
+        let stdin = io::stdin();
+        stdin
+            .lock()
+            .lines()
+            .filter_map(|line| line.ok())
+            .filter(|line| !line.trim().is_empty())
+            .flat_map(|line| {
+                line.split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect::<Vec<_>>()
+            })
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+    };
+
+    if models.is_empty() {
+        anyhow::bail!("未提供任何模型");
+    }
+
+    println!("将添加 {} 个模型到 {}:", models.len(), name);
+    for model in &models {
+        println!("  - {}", model);
+    }
+
+    let mut store = ConfigStore::new()?;
+    store.edit_model(name, |config| {
+        config.models = models.clone();
+        if config.default_model.is_none() && !models.is_empty() {
+            config.default_model = Some(models[0].clone());
+        }
+        Ok(())
+    })?;
+
+    println!("{} 已添加 {} 个模型到 {}", "✓".green(), models.len(), name);
 
     Ok(())
 }

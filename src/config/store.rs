@@ -95,8 +95,19 @@ impl ConfigStore {
 
         let content = fs::read_to_string(config_path).context("无法读取配置文件")?;
 
-        let config: AppConfig =
+        let mut config: AppConfig =
             toml::from_str(&content).context("配置文件格式错误，请检查 TOML 格式")?;
+
+        // 迁移旧的 model_id 到新的 models 数组
+        let needs_migration = config.models.iter().any(|m| m.legacy_model_id.is_some());
+        if needs_migration {
+            for model in &mut config.models {
+                model.migrate_from_legacy();
+            }
+            // 自动保存迁移后的配置
+            let toml_str = toml::to_string_pretty(&config).context("无法序列化配置")?;
+            fs::write(config_path, toml_str).context("无法写入迁移后的配置文件")?;
+        }
 
         Ok(config)
     }
