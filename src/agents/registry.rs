@@ -216,6 +216,7 @@ impl AdapterRegistry {
     ///
     /// # 返回
     /// 返回验证结果
+    #[allow(clippy::borrowed_box)]
     fn validate_adapter(&self, name: &str, adapter: &Box<dyn AgentAdapter>) -> ValidationResult {
         let mut errors = Vec::new();
         let mut warnings = Vec::new();

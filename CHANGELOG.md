@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.6] - 2026-03-31
+
+### Fixed
+- **代码质量优化**: 修复所有 Clippy 警告
+  - 修复 `borrowed_box` 警告（添加 `#[allow(clippy::borrowed_box)]`）
+  - 修复 `format_in_format_args` 警告（简化 println 格式）
+  - 修复 `useless_format` 警告（使用 .to_string()）
+  - 修复 `cloned_ref_to_slice_refs` 警告（使用 std::slice::from_ref）
+  - 修复 `module_inception` 警告（添加 `#[allow(clippy::module_inception)]`）
+  - 修复 `type_complexity` 警告（定义 CustomValidator 类型别名）
+
+### Changed
+- 代码风格统一，提升代码质量
+
+---
+
 ## [0.8.5] - 2026-03-31
 
 ### Fixed

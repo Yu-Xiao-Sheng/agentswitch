@@ -6,6 +6,7 @@ use rayon::prelude::*;
 use std::time::Instant;
 
 /// 验证工具配置（简化版，检查工具是否已配置）
+#[allow(clippy::borrowed_box)]
 fn validate_agent_config(adapter: &Box<dyn AgentAdapter>) -> anyhow::Result<()> {
     // 检查配置文件是否存在
     let config_path = adapter.config_path()?;

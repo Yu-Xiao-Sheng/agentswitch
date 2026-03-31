@@ -498,7 +498,7 @@ fn execute_detect_agents() -> anyhow::Result<()> {
                 "gemini-cli" => "npm install -g @google/gemini-cli",
                 _ => "请查看官方文档",
             };
-            println!("{:<20} {}", "", format!("需要运行: {}", install_hint));
+            println!("{:<20} 需要运行: {}", "", install_hint);
         }
 
         println!();

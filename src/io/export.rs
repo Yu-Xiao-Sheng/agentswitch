@@ -105,5 +105,5 @@ pub fn export_with_model_configs(
 
 /// 导出单个预设
 pub fn export_single_preset(preset: &Preset, output_path: &Path) -> anyhow::Result<()> {
-    export_presets(&[preset.clone()], output_path)
+    export_presets(std::slice::from_ref(preset), output_path)
 }

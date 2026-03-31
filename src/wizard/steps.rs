@@ -1,3 +1,6 @@
+/// 自定义验证函数类型
+type CustomValidator = Box<dyn Fn(&str) -> Result<(), String>>;
+
 /// 向导步骤定义
 #[derive(Debug)]
 pub struct WizardStep {
@@ -114,5 +117,5 @@ pub enum Validator {
     Url,
 
     /// 自定义验证函数
-    Custom(Box<dyn Fn(&str) -> Result<(), String>>),
+    Custom(CustomValidator),
 }

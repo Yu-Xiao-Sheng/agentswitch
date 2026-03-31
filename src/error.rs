@@ -470,10 +470,10 @@ pub fn network_connection_error(url: &str, error_msg: &str) -> AswError {
         .cause("网络连接问题")
         .cause("需要配置代理")
         .cause("API 服务不可用")
-        .suggest(format!("检查 base_url 配置是否正确"))
+        .suggest("检查 base_url 配置是否正确".to_string())
         .suggest("测试网络连接: ping <api-host>")
         .suggest("如需代理，设置环境变量: export HTTP_PROXY=http://proxy:port")
-        .suggest(format!("运行 'asw provider test <name> --verbose' 获取详细诊断"))
+        .suggest("运行 'asw provider test <name> --verbose' 获取详细诊断".to_string())
 }
 
 /// 创建权限不足错误
