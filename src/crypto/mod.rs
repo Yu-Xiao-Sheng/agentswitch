@@ -4,6 +4,10 @@ pub mod keyring;
 
 pub use cipher::Aes256GcmCipher;
 pub use error::CryptoError;
+pub use keyring::{
+    export_key_to_base64, generate_and_save_master_key, get_master_key_path_str,
+    import_and_save_master_key, load_master_key, master_key_exists,
+};
 
 use base64::{engine::general_purpose, Engine as _};
 

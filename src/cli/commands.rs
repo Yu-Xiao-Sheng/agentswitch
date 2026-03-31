@@ -1034,7 +1034,121 @@ fn execute_batch_status(_format: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// ============ Spec 004 新增命令 ============
+// ============ Spec 004 新增命令 ============
+
+/// 加密管理命令
+#[derive(clap::Subcommand, Debug)]
+pub enum CryptoCommands {
+    /// 生成新的加密密钥
+    Keygen,
+
+    /// 导出密钥（Base64 格式）
+    KeyExport,
+
+    /// 从 Base64 字符串导入密钥
+    KeyImport {
+        /// Base64 编码的密钥
+        key: String,
+    },
+
+    /// 查看加密状态
+    Status,
+}
+
+impl CryptoCommands {
+    pub fn run(&self) -> anyhow::Result<()> {
+        match self {
+            CryptoCommands::Keygen => execute_crypto_keygen(),
+            CryptoCommands::KeyExport => execute_crypto_key_export(),
+            CryptoCommands::KeyImport { key } => execute_crypto_key_import(key),
+            CryptoCommands::Status => execute_crypto_status(),
+        }
+    }
+}
+
+fn execute_crypto_keygen() -> anyhow::Result<()> {
+    use crate::crypto::{generate_and_save_master_key, get_master_key_path_str};
+
+    match generate_and_save_master_key() {
+        Ok(_) => {
+            let path = get_master_key_path_str()?;
+            print_success(&format!("密钥已生成并保存到: {}", path));
+            print_warning("请妥善保管此密钥文件，丢失将无法解密已加密的数据");
+            Ok(())
+        }
+        Err(crate::crypto::CryptoError::KeyAlreadyExists(msg)) => {
+            print_warning(&msg);
+            print_info("如需重新生成，请先删除旧密钥文件后再执行此命令");
+            Ok(())
+        }
+        Err(e) => Err(anyhow::anyhow!("生成密钥失败: {}", e)),
+    }
+}
+
+fn execute_crypto_key_export() -> anyhow::Result<()> {
+    use crate::crypto::{export_key_to_base64, load_master_key};
+
+    match load_master_key() {
+        Ok(key) => {
+            let b64 = export_key_to_base64(&key);
+            println!("{}", b64);
+            Ok(())
+        }
+        Err(crate::crypto::CryptoError::KeyNotFound(_)) => {
+            print_warning("主密钥不存在");
+            print_info("使用 'asw crypto keygen' 生成新密钥");
+            Ok(())
+        }
+        Err(e) => Err(anyhow::anyhow!("导出密钥失败: {}", e)),
+    }
+}
+
+fn execute_crypto_key_import(key: &str) -> anyhow::Result<()> {
+    use crate::crypto::import_and_save_master_key;
+
+    match import_and_save_master_key(key) {
+        Ok(_) => {
+            print_success("密钥已导入并保存");
+            Ok(())
+        }
+        Err(crate::crypto::CryptoError::KeyAlreadyExists(msg)) => {
+            print_warning(&msg);
+            print_info("如需覆盖，请先删除旧密钥文件后再执行此命令");
+            Ok(())
+        }
+        Err(crate::crypto::CryptoError::KeyInvalid(msg)) => {
+            Err(anyhow::anyhow!("导入密钥失败: {}", msg))
+        }
+        Err(e) => Err(anyhow::anyhow!("导入密钥失败: {}", e)),
+    }
+}
+
+fn execute_crypto_status() -> anyhow::Result<()> {
+    use crate::crypto::{get_master_key_path_str, master_key_exists};
+
+    println!("{}", "加密状态".green().bold());
+    println!("{}", "=".repeat(40).green());
+    println!();
+
+    let exists = master_key_exists()?;
+    let path = get_master_key_path_str()?;
+
+    let status = if exists {
+        "✓ 已配置".green()
+    } else {
+        "✗ 未配置".red()
+    };
+
+    println!("{:<20} {}", "主密钥状态:", status);
+    println!("{:<20} {}", "密钥文件路径:", path);
+
+    if !exists {
+        println!();
+        print_info("使用 'asw crypto keygen' 生成新密钥");
+    }
+
+    Ok(())
+}
 
 /// 向导命令
 #[derive(clap::Subcommand, Debug)]
@@ -1254,10 +1368,16 @@ impl SyncCommands {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
             SyncCommands::Init { .. } => crate::sync::config::run_sync_init(),
-            SyncCommands::Remote { .. } => {
-                println!("{}", "远程仓库管理功能将在后续版本实现".yellow());
-                Ok(())
-            }
+            SyncCommands::Remote { command } => match command {
+                RemoteSubCommands::Add { url } => crate::sync::config::run_sync_remote_add(url),
+                RemoteSubCommands::Remove { name } => {
+                    crate::sync::config::run_sync_remote_remove(name)
+                }
+                RemoteSubCommands::List => crate::sync::config::run_sync_remote_list(),
+                RemoteSubCommands::SetUrl { name, url } => {
+                    crate::sync::config::run_sync_remote_set_url(name, url)
+                }
+            },
             SyncCommands::Push { .. } => crate::sync::config::run_sync_push(),
             SyncCommands::Pull { .. } => crate::sync::config::run_sync_pull(),
             SyncCommands::Status => crate::sync::config::run_sync_status(),

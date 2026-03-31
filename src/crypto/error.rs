@@ -15,6 +15,15 @@ pub enum CryptoError {
     #[error("密钥派生失败: {0}")]
     KeyDerivationFailed(String),
 
+    #[error("密钥不存在: {0}")]
+    KeyNotFound(String),
+
+    #[error("密钥已存在: {0}")]
+    KeyAlreadyExists(String),
+
+    #[error("密钥无效: {0}")]
+    KeyInvalid(String),
+
     #[error("IO 错误: {0}")]
     Io(#[from] std::io::Error),
 
