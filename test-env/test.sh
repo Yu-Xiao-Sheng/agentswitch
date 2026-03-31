@@ -23,7 +23,7 @@ docker rm -f $CONTAINER_NAME 2>/dev/null || true
 echo "=== 启动容器 ==="
 docker run -d --name $CONTAINER_NAME \
     -e ZAI_API_KEY="$API_KEY" \
-    -e ZAI_BASE_URL="https://open.bigmodel.cn/api/coding/paas/v4" \
+    -e ZAI_BASE_URL="https://open.bigmodel.cn/api/anthropic" \
     -v $(dirname $(pwd)):/agentswitch-src \
     $IMAGE_NAME \
     tail -f /dev/null
@@ -36,62 +36,71 @@ echo "=== 在容器内安装 Agent CLI 工具 ==="
 # 安装 Claude Code
 docker exec $CONTAINER_NAME bash -c '
     echo ">>> 安装 Claude Code..."
-    npm install -g @anthropic-ai/claude-code 2>/dev/null || echo "Claude Code 安装失败（可能需要授权）"
+    curl -fsSL https://claude.ai/install.sh | bash 2>/dev/null || echo "Claude Code 安装失败（可能需要授权）"
 '
 
-# 安装 Codex (OpenAI)
+# 安装 OpenCode (替代 Codex)
 docker exec $CONTAINER_NAME bash -c '
-    echo ">>> 安装 Codex CLI..."
-    npm install -g @openai/codex 2>/dev/null || echo "Codex 安装失败"
+    echo ">>> 安装 OpenCode..."
+    npm install -g opencode 2>/dev/null || echo "OpenCode 安装失败"
 '
 
 # 安装 Gemini CLI
 docker exec $CONTAINER_NAME bash -c '
     echo ">>> 安装 Gemini CLI..."
-    npm install -g @anthropic-ai/gemini-cli 2>/dev/null || \
     npm install -g @google/gemini-cli 2>/dev/null || \
     npm install -g gemini-cli 2>/dev/null || \
     echo "Gemini CLI 安装失败"
-'
-
-# 安装 Qwen CLI
-docker exec $CONTAINER_NAME bash -c '
-    echo ">>> 安装 Qwen CLI..."
-    pip3 install qwen-cli 2>/dev/null || \
-    pip3 install qwen 2>/dev/null || \
-    echo "Qwen CLI 安装失败"
 '
 
 echo "=== 编译 agentswitch ==="
 docker exec $CONTAINER_NAME bash -c '
     cd /agentswitch-src
     cargo build --release
-    cp target/release/agentswitch /usr/local/bin/
+    cp target/release/asw /usr/local/bin/agentswitch
+    ln -sf /usr/local/bin/agentswitch /usr/local/bin/asw
 '
 
 echo "=== 运行 agentswitch 测试 ==="
 docker exec $CONTAINER_NAME bash -c '
     echo ">>> 检测已安装的工具..."
-    agentswitch doctor detect
+    asw doctor detect
     
     echo ""
     echo ">>> 添加供应商配置..."
-    agentswitch model add zhihu \
+    asw provider add zhipu \
         --base-url "$ZAI_BASE_URL" \
         --api-key "$ZAI_API_KEY" \
-        --model glm-4.7-flash
+        --protocol anthropic \
+        --models glm-4.7-flash,glm-5
     
     echo ""
     echo ">>> 列出所有配置..."
-    agentswitch model list
+    asw provider list
+    
+    echo ""
+    echo ">>> 测试供应商连接..."
+    asw provider test zhipu
     
     echo ""
     echo ">>> 切换到 claude-code..."
-    agentswitch switch claude-code --model glm-4.7-flash
+    asw switch claude-code zhipu glm-4.7-flash
     
     echo ""
     echo ">>> 检查当前配置..."
-    agentswitch status
+    asw status
+    
+    echo ""
+    echo ">>> 测试错误提示（故意使用错误的 URL）..."
+    asw provider add test-error \
+        --base-url "invalid-url" \
+        --api-key "test-key" \
+        --protocol openai \
+        --models test-model || true
+    
+    echo ""
+    echo ">>> 检查更新..."
+    asw update check
 '
 
 echo ""

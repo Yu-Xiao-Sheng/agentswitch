@@ -67,6 +67,11 @@ pub enum AgentCommands {
     Detect,
     /// 列出所有已注册的适配器
     List,
+    /// 显示指定 Agent 的详细信息
+    Show {
+        /// Agent 名称
+        name: String,
+    },
 }
 
 /// Backup 管理命令
@@ -115,6 +120,7 @@ impl AgentCommands {
         match self {
             AgentCommands::Detect => execute_detect_agents(),
             AgentCommands::List => execute_list_adapters(),
+            AgentCommands::Show { name } => execute_show_agent(name),
         }
     }
 }
@@ -624,7 +630,7 @@ fn parse_duration(duration: &str) -> anyhow::Result<i64> {
 }
 
 /// 显示状态
-pub fn execute_show_status() -> anyhow::Result<()> {
+pub fn execute_show_status(detailed: bool) -> anyhow::Result<()> {
     println!("{}", "Agent Configuration Status:".green().bold());
     println!("{}", "=".repeat(50).green());
     println!();
@@ -638,7 +644,7 @@ pub fn execute_show_status() -> anyhow::Result<()> {
         let name = adapter.name();
         let is_installed = adapter.detect()?;
         let config_path = adapter.config_path()?;
-        let _config_exists = config_path.exists();
+        let config_exists = config_path.exists();
 
         let active_info = active.get(name);
         let status = if active_info.is_some() {
@@ -657,18 +663,40 @@ pub fn execute_show_status() -> anyhow::Result<()> {
             }
         });
 
-        println!(
-            "{:<20} {:<25} {:<40} {}",
-            name.bold(),
-            model_text,
-            config_path.display().to_string(),
-            status
-        );
+        if detailed {
+            // 详细模式
+            println!("{}", format!("[{}]", name).green().bold());
+            println!("  状态: {}", if is_installed { "已安装" } else { "未安装" });
+            println!("  配置文件: {}", config_path.display());
+            if config_exists {
+                println!("  配置文件状态: ✓ 存在");
+            } else {
+                println!("  配置文件状态: ✗ 不存在");
+            }
+            if !model_text.is_empty() {
+                println!("  当前模型: {}", model_text);
+            }
+            if let Some(am) = active_info {
+                println!("  激活配置: 供应商={}, 模型={}", am.provider, am.model);
+            }
+            println!();
+        } else {
+            // 简洁模式
+            println!(
+                "{:<20} {:<25} {:<40} {}",
+                name.bold(),
+                model_text,
+                config_path.display().to_string(),
+                status
+            );
+        }
     }
 
-    println!();
-    println!("{}", "Legend:".cyan());
-    println!("  ✓ = 已配置  ⚠ = 未配置  ✗ = 未安装");
+    if !detailed {
+        println!();
+        println!("{}", "Legend:".cyan());
+        println!("  ✓ = 已配置  ⚠ = 未配置  ✗ = 未安装");
+    }
     println!();
     println!(
         "{}",
@@ -791,6 +819,76 @@ fn execute_list_adapters() -> anyhow::Result<()> {
 
     println!();
     println!("{}", "提示: 使用 'asw agent detect' 查看详细信息".cyan());
+
+    Ok(())
+}
+
+/// 执行 agent show 命令
+fn execute_show_agent(name: &str) -> anyhow::Result<()> {
+    use crate::config::ConfigStore;
+
+    let adapters = all_adapters();
+    let adapter = adapters
+        .iter()
+        .find(|a| a.name() == name)
+        .ok_or_else(|| anyhow::anyhow!("未知的工具: {}", name))?;
+
+    println!("{}", format!("Agent: {}", name).green().bold());
+    println!("{}", "=".repeat(50).green());
+    println!();
+
+    // 检测安装状态
+    let is_installed = adapter.detect()?;
+    let install_status = if is_installed {
+        "✓ 已安装".green()
+    } else {
+        "✗ 未安装".red()
+    };
+    println!("{:<20} {}", "安装状态:", install_status);
+
+    // 配置文件路径
+    let config_path = adapter.config_path()?;
+    let config_exists = config_path.exists();
+    let config_status = if config_exists {
+        config_path.display().to_string().green()
+    } else {
+        "未创建".yellow()
+    };
+    println!("{:<20} {}", "配置文件:", config_status);
+
+    // 当前模型
+    if is_installed && config_exists {
+        if let Ok(Some(model)) = adapter.current_model() {
+            println!("{:<20} {}", "当前模型:", model.cyan());
+        } else {
+            println!("{:<20} {}", "当前模型:", "未配置".yellow());
+        }
+    }
+
+    // 安装提示
+    if !is_installed {
+        println!();
+        println!("{}", "安装提示:".cyan());
+        let install_hint = match name {
+            "claude-code" => "npm install -g @anthropic-ai/claude-code",
+            "codex" => "npm install -g @openai/codex",
+            "gemini-cli" => "npm install -g @google/gemini-cli",
+            "opencode" => "npm install -g opencode",
+            "qwen-cli" => "pip install qwen-cli",
+            "grok-cli" => "pip install grok-cli",
+            _ => "请查看官方文档",
+        };
+        println!("  {}", install_hint);
+    }
+
+    // 当前激活配置
+    let store = ConfigStore::new()?;
+    if let Some(active) = store.get_active(name) {
+        println!();
+        println!("{}", "当前激活配置:".cyan());
+        println!("  供应商: {}", active.provider);
+        println!("  模型: {}", active.model);
+    }
 
     Ok(())
 }
@@ -1491,28 +1589,6 @@ pub enum WizardCommands {
     },
 }
 
-/// 诊断命令
-#[derive(clap::Subcommand, Debug)]
-pub enum DoctorCommands {
-    /// 运行完整诊断
-    Doctor {
-        /// 显示详细信息
-        #[arg(short, long)]
-        verbose: bool,
-
-        /// 以 JSON 格式输出
-        #[arg(short, long)]
-        json: bool,
-
-        /// 尝试自动修复问题
-        #[arg(long)]
-        fix: bool,
-    },
-
-    /// 检测已安装工具（简化版）
-    Detect,
-}
-
 /// 补全命令
 #[derive(clap::Subcommand, Debug)]
 pub enum CompletionCommands {
@@ -1645,17 +1721,6 @@ impl WizardCommands {
                 println!("{}", "向导添加模型功能将在后续版本实现".yellow());
                 Ok(())
             }
-        }
-    }
-}
-
-impl DoctorCommands {
-    pub fn run(&self) -> anyhow::Result<()> {
-        match self {
-            DoctorCommands::Doctor { verbose, json, fix } => {
-                crate::doctor::run_doctor(*verbose, *json, *fix)
-            }
-            DoctorCommands::Detect => crate::doctor::run_detect(),
         }
     }
 }

@@ -157,12 +157,17 @@ pub enum BatchCommands {
 }
 
 fn parse_kv(s: &str) -> Result<String, String> {
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() == 2 {
-        // 返回原始字符串，后续在命令处理中解析
-        Ok(s.to_string())
+    // 只分割第一个冒号，允许值部分包含冒号（如 provider:model 格式）
+    if let Some(pos) = s.find(':') {
+        let key = &s[..pos];
+        let value = &s[pos + 1..];
+        if !key.is_empty() && !value.is_empty() {
+            Ok(s.to_string())
+        } else {
+            Err(format!("Invalid key:value format: {} (key and value must be non-empty)", s))
+        }
     } else {
-        Err(format!("Invalid key:value format: {}", s))
+        Err(format!("Invalid key:value format: {} (expected 'key:value')", s))
     }
 }
 
@@ -197,21 +202,6 @@ pub enum WizardCommands {
 /// 诊断命令（Spec 004）
 #[derive(Subcommand, Debug)]
 pub enum DoctorCommands {
-    /// 运行完整诊断
-    Doctor {
-        /// 显示详细信息
-        #[arg(short, long)]
-        verbose: bool,
-
-        /// 以 JSON 格式输出
-        #[arg(short, long)]
-        json: bool,
-
-        /// 尝试自动修复问题
-        #[arg(long)]
-        fix: bool,
-    },
-
     /// 检测已安装工具（简化版）
     Detect,
 }

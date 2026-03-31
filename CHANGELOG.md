@@ -2,6 +2,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.5] - 2026-03-31
+
+### Fixed
+- **Claude Code adapter 实现**: 完整实现 Claude Code adapter 的 `apply()` 和 `current_model()` 方法
+  - 配置文件使用 `~/.claude/settings.json`，通过 `env` 字段设置环境变量
+  - 支持 `ANTHROPIC_BASE_URL`、`ANTHROPIC_API_KEY`、`ANTHROPIC_MODEL` 配置
+  - 保留现有的 settings.json 中的其他配置字段
+
+- **preset create --agent 格式修复**: 修复 `--agent` 参数的解析逻辑
+  - 现在支持值部分包含冒号的格式，如 `--agent gemini-cli:provider:model`
+  - 改进错误提示，明确说明格式要求
+
+- **新增 agent show 命令**: 添加 `asw agent show <name>` 子命令
+  - 显示指定 Agent 的详细信息
+  - 包括安装状态、配置文件路径、当前模型、激活配置等
+  - 对于未安装的工具提供安装提示
+
+- **status --detailed 功能实现**: 实现详细状态显示模式
+  - `asw status` 显示简洁的单行状态
+  - `asw status --detailed` 显示详细的块状状态信息
+  - 包括配置文件状态、激活配置等详细信息
+
+- **backup list 功能修复**: 确保备份列表正确显示
+  - 备份目录创建逻辑与列表读取逻辑一致
+  - 支持空备份创建（当配置文件不存在时）
+  - 改进备份文件的存储路径
+
+- **doctor 命令简化**: 修复需要双重命令的问题
+  - `asw doctor` 直接运行完整诊断（原来是 `asw doctor doctor`）
+  - `asw doctor detect` 运行简化版工具检测
+  - 支持参数：`--verbose`、`--json`、`--fix`
+
+### Changed
+- 重构 Doctor 命令结构，提供更直观的命令行体验
+- 改进 parse_kv 函数，支持更灵活的键值对格式
+- 统一 adapter 的 backup 方法，支持空配置文件的情况
+
+---
+
 ## [0.8.4] - 2026-03-31
 
 ### Added

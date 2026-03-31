@@ -9,7 +9,7 @@ pub use args::{BatchCommands, PresetCommands};
 pub use commands::{AgentCommands, BackupCommands, CryptoCommands, ProviderCommands, UpdateCommands};
 
 // Spec 004 新增命令导出 (从 commands.rs 导入，因为那里有 run 实现)
-pub use commands::{CompletionCommands, DoctorCommands, SyncCommands, WizardCommands};
+pub use commands::{CompletionCommands, SyncCommands, WizardCommands};
 
 /// AgentSwitch CLI
 #[derive(Parser, Debug)]
@@ -64,9 +64,24 @@ pub enum Command {
     #[command(subcommand)]
     Wizard(WizardCommands),
 
-    /// Tool diagnostics (Spec 004)
-    #[command(subcommand)]
-    Doctor(DoctorCommands),
+    /// 运行诊断工具检查环境和配置
+    Doctor {
+        /// 显示详细信息
+        #[arg(short, long)]
+        verbose: bool,
+
+        /// 以 JSON 格式输出
+        #[arg(short, long)]
+        json: bool,
+
+        /// 尝试自动修复问题
+        #[arg(long)]
+        fix: bool,
+
+        /// 子命令
+        #[command(subcommand)]
+        command: Option<DoctorSubcommand>,
+    },
 
     /// Shell completion (Spec 004)
     #[command(subcommand)]
@@ -85,6 +100,13 @@ pub enum Command {
     Update(UpdateCommands),
 }
 
+/// Doctor 子命令
+#[derive(Subcommand, Debug)]
+pub enum DoctorSubcommand {
+    /// 检测已安装工具（简化版）
+    Detect,
+}
+
 impl Command {
     pub fn run(&self) -> anyhow::Result<()> {
         match self {
@@ -93,11 +115,16 @@ impl Command {
             Command::Backup(cmd) => cmd.run(),
             Command::Preset(cmd) => cmd.run(),
             Command::Batch(cmd) => cmd.run(),
-            Command::Status { detailed: _ } => commands::execute_show_status(),
+            Command::Status { detailed } => commands::execute_show_status(*detailed),
             Command::Switch { agent, provider, model } => commands::execute_switch(agent, provider, model),
             // Spec 004 新命令
             Command::Wizard(cmd) => cmd.run(),
-            Command::Doctor(cmd) => cmd.run(),
+            Command::Doctor { verbose, json, fix, command } => {
+                match command {
+                    Some(DoctorSubcommand::Detect) => crate::doctor::run_detect(),
+                    None => crate::doctor::run_doctor(*verbose, *json, *fix),
+                }
+            }
             Command::Completion(cmd) => cmd.run(),
             Command::Sync(cmd) => cmd.run(),
             Command::Crypto(cmd) => cmd.run(),
