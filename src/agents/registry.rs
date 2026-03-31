@@ -3,7 +3,7 @@
 //! 提供动态适配器注册和查询功能
 
 use crate::agents::AgentAdapter;
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use std::collections::HashMap;
 use std::sync::RwLock;
 

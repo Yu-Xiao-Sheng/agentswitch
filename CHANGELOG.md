@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.2.0] - 2026-03-31
+## [0.5.1] - 2026-03-31
 
 ### Added
 - **opencode 适配器**: 新增对 opencode CLI 工具的支持

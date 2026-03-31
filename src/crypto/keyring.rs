@@ -37,8 +37,8 @@ impl KeyDerivation {
 
     /// 生成随机盐值
     pub fn generate_salt() -> Result<[u8; 32], CryptoError> {
-        use aes_gcm::aead::OsRng;
         use aes_gcm::aead::rand_core::RngCore;
+        use aes_gcm::aead::OsRng;
         let mut salt = [0u8; 32];
         OsRng.fill_bytes(&mut salt);
         Ok(salt)

@@ -1,6 +1,6 @@
 [package]
 name = "agentswitch"
-version = "0.2.0"
+version = "0.5.1"
 edition = "2021"
 authors = ["Yu-Xiao-Sheng <yu.xiao.sheng@example.com>"]
 description = "一个通用的代码终端代理工具配置切换器，支持将任意 OpenAI 协议模型接入到主流 Code Agent 工具中"

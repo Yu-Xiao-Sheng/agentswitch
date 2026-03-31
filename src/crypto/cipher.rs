@@ -1,7 +1,7 @@
 use crate::crypto::error::CryptoError;
 use aes_gcm::{
-    Aes256Gcm, Nonce,
     aead::{Aead, AeadCore, KeyInit, OsRng},
+    Aes256Gcm, Nonce,
 };
 use argon2::{Algorithm, Argon2, Params, Version};
 

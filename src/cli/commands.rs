@@ -778,7 +778,7 @@ fn execute_preset_delete(name: &str, force: bool) -> anyhow::Result<()> {
 
 fn execute_preset_validate(name: &str) -> anyhow::Result<()> {
     use crate::config::ConfigStore;
-    use crate::presets::{PresetStore, validate_preset_agents};
+    use crate::presets::{validate_preset_agents, PresetStore};
 
     let store = PresetStore::new()?;
     let preset = store.get_preset(name)?;
@@ -835,8 +835,8 @@ fn execute_preset_export(
 fn execute_preset_import(input: &str, strategy: &str, dry_run: bool) -> anyhow::Result<()> {
     use crate::config::ConfigStore;
     use crate::io::{
-        ImportStrategy, check_import_dependencies, import_presets, preview_import_changes,
-        validate_import_file,
+        check_import_dependencies, import_presets, preview_import_changes, validate_import_file,
+        ImportStrategy,
     };
     use crate::presets::PresetStore;
     use std::path::Path;

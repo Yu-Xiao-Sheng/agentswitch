@@ -242,8 +242,7 @@ impl AgentAdapter for OpenCodeAdapter {
         let config_path = config_dir.join("opencode.json");
         let mut config = if config_path.exists() {
             let content = fs::read_to_string(&config_path).context("读取 opencode.json 失败")?;
-            serde_json::from_str::<OpenCodeConfig>(&content)
-                .context("解析 opencode.json 失败")?
+            serde_json::from_str::<OpenCodeConfig>(&content).context("解析 opencode.json 失败")?
         } else {
             OpenCodeConfig {
                 schema: Some("https://opencode.ai/config.json".to_string()),
@@ -262,7 +261,10 @@ impl AgentAdapter for OpenCodeAdapter {
 
         let provider_options = OpenCodeProviderOptions {
             base_url: Some(model_config.base_url.clone()),
-            api_key: Some(format!("{{env:OPENCODE_{}_API_KEY}}", self.provider_name.to_uppercase())),
+            api_key: Some(format!(
+                "{{env:OPENCODE_{}_API_KEY}}",
+                self.provider_name.to_uppercase()
+            )),
             headers: None,
         };
 
@@ -317,8 +319,8 @@ impl AgentAdapter for OpenCodeAdapter {
     fn restore(&self, backup: &Backup) -> Result<()> {
         if backup.backup_path.exists() {
             // 读取备份内容
-            let backup_content = fs::read_to_string(&backup.backup_path)
-                .context("读取备份文件失败")?;
+            let backup_content =
+                fs::read_to_string(&backup.backup_path).context("读取备份文件失败")?;
 
             // 如果备份是空的，删除原配置文件
             if backup_content.trim() == "{}" {

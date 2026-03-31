@@ -1,5 +1,5 @@
-use crate::agents::AgentAdapter;
 use crate::agents::global_registry;
+use crate::agents::AgentAdapter;
 use crate::doctor::health::HealthCheckResult;
 use crate::doctor::{ConfigFormat, SystemInfo, ToolDetection, ToolStatus};
 use colored::Colorize;

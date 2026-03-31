@@ -12,7 +12,7 @@
 
 use crate::agents::adapter::{AgentAdapter, Backup};
 use crate::config::ModelConfig;
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use std::path::PathBuf;
 
 /// Adapter for Codex (OpenAI's code assistant CLI)
@@ -88,8 +88,12 @@ impl AgentAdapter for CodexAdapter {
     }
 
     fn restore(&self, backup: &Backup) -> Result<()> {
-        if backup.backup_path.exists() 
-            && backup.original_config_path.parent().map(|p| p.exists()).unwrap_or(false) 
+        if backup.backup_path.exists()
+            && backup
+                .original_config_path
+                .parent()
+                .map(|p| p.exists())
+                .unwrap_or(false)
         {
             std::fs::copy(&backup.backup_path, &backup.original_config_path)
                 .context("Failed to restore backup")?;

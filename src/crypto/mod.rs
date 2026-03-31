@@ -5,7 +5,7 @@ pub mod keyring;
 pub use cipher::Aes256GcmCipher;
 pub use error::CryptoError;
 
-use base64::{Engine as _, engine::general_purpose};
+use base64::{engine::general_purpose, Engine as _};
 
 // Re-export EncryptedValue from sync module
 
