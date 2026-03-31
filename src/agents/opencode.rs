@@ -33,7 +33,7 @@
 //! ```
 
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -232,7 +232,7 @@ impl AgentAdapter for OpenCodeAdapter {
         })
     }
 
-    fn apply(&self, model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, provider: &Provider, model: &str) -> Result<()> {
         let config_dir = self.config_dir()?;
 
         // 创建配置目录（如果不存在）
@@ -252,7 +252,7 @@ impl AgentAdapter for OpenCodeAdapter {
 
         // 构建自定义供应商配置
         let model_name = OpenCodeModel {
-            name: Some(model_config.name.clone()),
+            name: Some(provider.name.clone()),
             limit: Some(OpenCodeModelLimit {
                 context: Some(128000),
                 output: Some(16384),
@@ -260,7 +260,7 @@ impl AgentAdapter for OpenCodeAdapter {
         };
 
         let provider_options = OpenCodeProviderOptions {
-            base_url: Some(model_config.base_url.clone()),
+            base_url: Some(provider.base_url.clone()),
             api_key: Some(format!(
                 "{{env:OPENCODE_{}_API_KEY}}",
                 self.provider_name.to_uppercase()
@@ -269,22 +269,21 @@ impl AgentAdapter for OpenCodeAdapter {
         };
 
         let mut models = HashMap::new();
-        let default_model = model_config.get_default_model().unwrap_or("");
-        models.insert(default_model.to_string(), model_name);
+        models.insert(model.to_string(), model_name);
 
-        let provider = OpenCodeProvider {
+        let oc_provider = OpenCodeProvider {
             npm: Some("@ai-sdk/openai-compatible".to_string()),
-            name: Some(format!("{} (Custom)", model_config.name)),
+            name: Some(format!("{} (Custom)", provider.name)),
             options: Some(provider_options),
             models: Some(models),
         };
 
         // 更新配置
         let providers = config.provider.get_or_insert_with(HashMap::new);
-        providers.insert(self.provider_name.clone(), provider);
+        providers.insert(self.provider_name.clone(), oc_provider);
 
         // 设置默认模型
-        config.model = Some(format!("{}/{}", self.provider_name, default_model));
+        config.model = Some(format!("{}/{}", self.provider_name, model));
 
         // 写回配置文件
         let content = serde_json::to_string_pretty(&config).context("序列化 opencode.json 失败")?;
@@ -306,7 +305,7 @@ impl AgentAdapter for OpenCodeAdapter {
         auth.providers.insert(
             self.provider_name.clone(),
             OpenCodeAuthProvider {
-                api_key: Some(model_config.api_key.clone()),
+                api_key: Some(provider.api_key.clone()),
             },
         );
 

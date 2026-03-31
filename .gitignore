@@ -29,3 +29,6 @@ Cargo.lock
 
 # Wizard state (Spec 004)
 wizard_state.toml
+
+# Superpowers docs (development plans)
+docs/superpowers/

@@ -1,4 +1,4 @@
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
@@ -62,8 +62,8 @@ pub trait AgentAdapter: Send + Sync {
     /// Create a backup of the current configuration
     fn backup(&self) -> Result<Backup>;
 
-    /// Apply a model configuration to this agent
-    fn apply(&self, model_config: &ModelConfig) -> Result<()>;
+    /// Apply a provider configuration with a specific model to this agent
+    fn apply(&self, provider: &Provider, model: &str) -> Result<()>;
 
     /// Restore a configuration from a backup
     fn restore(&self, backup: &Backup) -> Result<()>;

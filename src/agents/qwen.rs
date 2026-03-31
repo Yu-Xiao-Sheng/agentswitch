@@ -1,5 +1,5 @@
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -42,13 +42,9 @@ impl AgentAdapter for QwenAdapter {
     }
 
     fn detect(&self) -> Result<bool> {
-        // 检查可执行文件是否存在（在 PATH 中）
         let in_path = which::which("qwen").is_ok();
-
-        // 检查配置文件是否存在
         let config_dir = self.config_dir()?;
         let has_config = config_dir.exists() && config_dir.join("config.json").exists();
-
         Ok(in_path || has_config)
     }
 
@@ -70,7 +66,9 @@ impl AgentAdapter for QwenAdapter {
         let backup_filename = format!("backup-{}.json", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
+        if config_path.exists() {
+            std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
+        }
 
         Ok(Backup {
             agent_name: self.name().to_string(),
@@ -80,7 +78,7 @@ impl AgentAdapter for QwenAdapter {
         })
     }
 
-    fn apply(&self, model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, provider: &Provider, model: &str) -> Result<()> {
         let config_dir = self.config_dir()?;
 
         // 创建配置目录（如果不存在）
@@ -96,8 +94,8 @@ impl AgentAdapter for QwenAdapter {
         };
 
         // 更新配置
-        config.api_base_url = Some(model_config.base_url.clone());
-        config.model_id = Some(model_config.get_default_model().unwrap_or("").to_string());
+        config.api_base_url = Some(provider.base_url.clone());
+        config.model_id = Some(model.to_string());
 
         // 写回 config.json
         let content = serde_json::to_string_pretty(&config).context("序列化 config.json 失败")?;
@@ -112,7 +110,7 @@ impl AgentAdapter for QwenAdapter {
             QwenAuth::default()
         };
 
-        auth.dashscope_api_key = Some(model_config.api_key.clone());
+        auth.dashscope_api_key = Some(provider.api_key.clone());
 
         // 写回 auth.json
         let content = serde_json::to_string_pretty(&auth).context("序列化 auth.json 失败")?;
@@ -135,7 +133,6 @@ impl AgentAdapter for QwenAdapter {
         }
 
         let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
-
         let config: QwenConfig = serde_json::from_str(&content).context("解析配置文件失败")?;
 
         Ok(config.model_id.map(|s| s.to_string()))

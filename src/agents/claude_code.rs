@@ -1,5 +1,5 @@
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{Context, Result};
 use std::path::PathBuf;
 
@@ -64,7 +64,7 @@ impl AgentAdapter for ClaudeCodeAdapter {
         })
     }
 
-    fn apply(&self, _model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, _provider: &Provider, _model: &str) -> Result<()> {
         // TODO: Implement Claude Code configuration
         anyhow::bail!("Claude Code adapter is not yet implemented")
     }

@@ -2,14 +2,15 @@
 
 use crate::agents::AgentAdapter;
 use crate::batch::status::{BatchOperationResult, ToolOperationResult};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use rayon::prelude::*;
 use std::time::Instant;
 
 /// 批量切换工具到指定模型
 pub fn batch_switch_agents(
     adapters: Vec<Box<dyn AgentAdapter>>,
-    model_config: &ModelConfig,
+    provider: &Provider,
+    model: &str,
 ) -> BatchOperationResult {
     let start = Instant::now();
     let total = adapters.len();
@@ -27,7 +28,7 @@ pub fn batch_switch_agents(
                 .map(|p| p.backup_path.to_string_lossy().to_string());
 
             // 应用配置
-            let result = adapter.apply(model_config);
+            let result = adapter.apply(provider, model);
 
             match result {
                 Ok(()) => ToolOperationResult {
@@ -63,7 +64,8 @@ pub fn batch_switch_agents(
 pub fn batch_switch_selected_agents(
     adapters: Vec<Box<dyn AgentAdapter>>,
     selected_agents: Vec<String>,
-    model_config: &ModelConfig,
+    provider: &Provider,
+    model: &str,
 ) -> BatchOperationResult {
     // 过滤出选中的工具
     let filtered_adapters: Vec<_> = adapters
@@ -71,5 +73,5 @@ pub fn batch_switch_selected_agents(
         .filter(|a| selected_agents.contains(&a.name().to_string()))
         .collect();
 
-    batch_switch_agents(filtered_adapters, model_config)
+    batch_switch_agents(filtered_adapters, provider, model)
 }

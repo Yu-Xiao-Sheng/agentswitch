@@ -1,5 +1,5 @@
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -48,13 +48,9 @@ impl AgentAdapter for GrokAdapter {
     }
 
     fn detect(&self) -> Result<bool> {
-        // 检查可执行文件是否存在（在 PATH 中）
         let in_path = which::which("grok").is_ok();
-
-        // 检查配置文件是否存在
         let config_dir = self.config_dir()?;
         let has_config = config_dir.exists() && config_dir.join("config.toml").exists();
-
         Ok(in_path || has_config)
     }
 
@@ -76,7 +72,9 @@ impl AgentAdapter for GrokAdapter {
         let backup_filename = format!("backup-{}.toml", timestamp.format("%Y%m%d-%H%M%S"));
         let backup_path = backup_dir.join(&backup_filename);
 
-        std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
+        if config_path.exists() {
+            std::fs::copy(&config_path, &backup_path).context("Failed to backup configuration")?;
+        }
 
         Ok(Backup {
             agent_name: self.name().to_string(),
@@ -86,7 +84,7 @@ impl AgentAdapter for GrokAdapter {
         })
     }
 
-    fn apply(&self, model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, provider: &Provider, model: &str) -> Result<()> {
         let config_dir = self.config_dir()?;
 
         // 创建配置目录（如果不存在）
@@ -103,8 +101,8 @@ impl AgentAdapter for GrokAdapter {
 
         // 更新 custom_provider 配置
         config.custom_provider = Some(GrokCustomProvider {
-            base_url: Some(model_config.base_url.clone()),
-            model: Some(model_config.get_default_model().unwrap_or("").to_string()),
+            base_url: Some(provider.base_url.clone()),
+            model: Some(model.to_string()),
         });
 
         // 写回 config.toml
@@ -120,7 +118,7 @@ impl AgentAdapter for GrokAdapter {
             GrokAuth::default()
         };
 
-        auth.xai_api_key = Some(model_config.api_key.clone());
+        auth.xai_api_key = Some(provider.api_key.clone());
 
         // 写回 auth.json
         let content = serde_json::to_string_pretty(&auth).context("序列化 auth.json 失败")?;
@@ -143,10 +141,8 @@ impl AgentAdapter for GrokAdapter {
         }
 
         let content = fs::read_to_string(&config_path).context("读取配置文件失败")?;
-
         let config: GrokConfig = toml::from_str(&content).context("解析配置文件失败")?;
 
-        // 从 custom_provider 读取模型 ID
         Ok(config
             .custom_provider
             .and_then(|p| p.model)

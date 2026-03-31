@@ -11,7 +11,7 @@
 //! - grok: 支持 OpenAI 兼容协议
 
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{bail, Context, Result};
 use std::path::PathBuf;
 
@@ -74,7 +74,7 @@ impl AgentAdapter for CodexAdapter {
         })
     }
 
-    fn apply(&self, _model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, _provider: &Provider, _model: &str) -> Result<()> {
         bail!(
             "Codex 使用 OpenAI Response API，与标准 /v1/chat/completions 协议不兼容，暂不支持自定义供应商。\\\n\
              \\n\

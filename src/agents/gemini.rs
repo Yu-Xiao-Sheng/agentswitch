@@ -1,5 +1,5 @@
 use crate::agents::adapter::{AgentAdapter, Backup};
-use crate::config::ModelConfig;
+use crate::config::Provider;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
@@ -81,7 +81,7 @@ impl AgentAdapter for GeminiAdapter {
         })
     }
 
-    fn apply(&self, model_config: &ModelConfig) -> Result<()> {
+    fn apply(&self, provider: &Provider, model: &str) -> Result<()> {
         let config_dir = self.config_dir()?;
 
         // 创建配置目录（如果不存在）
@@ -97,8 +97,8 @@ impl AgentAdapter for GeminiAdapter {
         };
 
         settings.defaultModel = Some(GeminiModel {
-            api_base_url: Some(model_config.base_url.clone()),
-            model_id: Some(model_config.get_default_model().unwrap_or("").to_string()),
+            api_base_url: Some(provider.base_url.clone()),
+            model_id: Some(model.to_string()),
         });
 
         let content =
@@ -109,7 +109,7 @@ impl AgentAdapter for GeminiAdapter {
         let env_path = config_dir.join(".env");
         let env_content = format!(
             "GOOGLE_GEMINI_BASE_URL={}\nGEMINI_API_KEY={}\nGEMINI_MODEL={}\n",
-            model_config.base_url, model_config.api_key, model_config.get_default_model().unwrap_or("")
+            provider.base_url, provider.api_key, model
         );
         fs::write(&env_path, env_content).context("写入 .env 失败")?;
 
