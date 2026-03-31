@@ -58,14 +58,14 @@
 ### 3. 配置切换与对比 ✅ (已完成 - v0.2.0)
 快速在不同工具间切换模型配置，方便对比不同模型在同一工具下的表现：
 ```bash
-# 将 opencode 切换到 GLM-4
-asw switch opencode glm
+# 将 claude-code 切换到智谱 GLM-4.7-flash
+asw switch claude-code zhipu glm-4.7-flash
 
-# 将 claude-code 切换到自定义 Anthropic 兼容模型
-asw switch claude-code my-claude-model
+# 将 opencode 切换到 DeepSeek
+asw switch opencode deepseek deepseek-chat
 
-# 将 gemini-cli 切换到 DeepSeek
-asw switch gemini-cli deepseek
+# 将 gemini-cli 切换到自定义模型
+asw switch gemini-cli my-provider my-model
 ```
 
 ### 4. 配置文件备份与恢复 ✅ (已完成 - v0.2.0)
@@ -84,47 +84,71 @@ asw backup clean --older-than 7d
 ### 5. 配置预设管理 ✅ (已完成 - v0.3.0)
 保存常用的配置组合，一键应用预设配置：
 ```bash
-# 保存当前配置为预设
-asw preset save my-work --tags "daily,llm" --agents "claude-code:glm,codex:glm-4"
+# 创建预设
+asw preset create my-work --description "日常工作配置" --tag "daily" --agent "claude-code:zhipu:glm-4.7-flash" --agent "opencode:deepseek:deepseek-chat"
 
 # 列出所有预设
 asw preset list
+
+# 显示预设详情
+asw preset show my-work
 
 # 应用预设
 asw preset apply my-work
 
 # 验证预设
 asw preset validate my-work
+
+# 导出预设
+asw preset export my-work --output my-work.json
+
+# 导入预设
+asw preset import my-work.json
+
+# 更新预设
+asw preset update my-work --description "更新后的配置"
+
+# 删除预设
+asw preset delete my-work
 ```
 
 ### 6. 批量操作 ✅ (已完成 - v0.3.0)
 同时切换多个工具到同一模型：
 ```bash
-# 批量切换所有工具到 GLM-4
-asw batch switch glm
+# 批量切换所有工具到指定模型
+asw batch switch glm-4.7-flash
+
+# 仅切换特定工具
+asw batch switch glm-4.7-flash --agent claude-code --agent opencode
+
+# 模拟运行（不实际修改配置）
+asw batch switch glm-4.7-flash --dry-run
+
+# 并行切换
+asw batch switch glm-4.7-flash --parallel 3
 
 # 批量验证配置
 asw batch validate
+
+# 查看批量状态
+asw batch status
 ```
 
 ### 7. 交互式配置向导 ✅ (已完成 - v0.4.0)
 友好的 CLI 交互式向导，引导新用户完成初始化配置：
 ```bash
-# 启动向导
+# 启动初始化向导
 asw wizard init
 
-# 恢复向导进度
-asw wizard init --resume
-
-# 重新开始
-asw wizard init --reset
+# 通过向导添加模型配置
+asw wizard wizard
 ```
 
 ### 8. 工具诊断 ✅ (已完成 - v0.4.0)
 自动检测系统中已安装的 Code Agent 工具：
 ```bash
 # 运行完整诊断
-asw doctor
+asw doctor doctor
 
 # 检测已安装工具（简化版）
 asw doctor detect
@@ -136,15 +160,21 @@ asw doctor detect
 # 安装补全
 asw completion install bash
 
+# 卸载补全
+asw completion uninstall bash
+
 # 生成补全脚本
-asw completion generate bash > /tmp/bash_completion.sh
+asw completion generate bash
 ```
 
-### 10. 配置同步 (Git) ✅ (已完成 - v0.4.0)
+### 10. 配置同步 (Git) ✅ (已完成 - v0.6.0)
 通过 Git 同步配置，支持多机器配置共享：
 ```bash
 # 初始化 Git 仓库
 asw sync init
+
+# 管理远程仓库
+asw sync remote add origin https://github.com/user/repo.git
 
 # 推送到远程
 asw sync push
@@ -154,6 +184,22 @@ asw sync pull
 
 # 查看同步状态
 asw sync status
+```
+
+### 11. 配置加密 ✅ (已完成 - v0.6.0)
+API Key 加密存储，支持多机器配置安全同步：
+```bash
+# 生成加密密钥
+asw crypto keygen
+
+# 导出密钥（Base64 格式，用于备份或多机器同步）
+asw crypto key-export
+
+# 导入密钥（在新机器上恢复加密配置）
+asw crypto key-import
+
+# 查看加密状态
+asw crypto status
 ```
 
 ## 🗺️ 项目蓝图
@@ -171,15 +217,17 @@ asw sync status
   - [x] URL 格式验证（http/https）
   - [x] 模型名称规范检查
 
-### Phase 2: 模型配置管理 ✅ (已完成 - v0.1.0)
-- [x] **添加模型配置** (`asw model add`)
-  - [x] 支持配置：名称、Base URL、API Key、Model ID
-  - [x] 配置验证（URL、模型名称）
-- [x] **列出模型配置** (`asw model list`)
-  - [x] 显示所有已配置的模型
+### Phase 2: 供应商配置管理 ✅ (已完成 - v0.8.0)
+- [x] **添加供应商** (`asw provider add`)
+  - [x] 支持配置：名称、Base URL、API Key、Protocol、Models
+  - [x] 配置验证（URL、协议）
+- [x] **列出供应商** (`asw provider list`)
+  - [x] 显示所有已配置的供应商
   - [x] API Key 掩码显示
-- [x] **删除模型配置** (`asw model remove`)
-- [x] **编辑模型配置** (`asw model edit`)
+- [x] **删除供应商** (`asw provider remove`)
+- [x] **显示供应商详情** (`asw provider show`)
+- [x] **测试供应商连接** (`asw provider test`)
+- [x] **获取模型列表** (`asw provider fetch-models`)
 
 ### Phase 3: Agent 工具适配器 ✅ (已完成 - v0.2.0)
 - [x] **适配器接口设计**
@@ -195,9 +243,12 @@ asw sync status
   - [x] JSON + .env 配置解析
 - [x] **其他工具适配器** (Qwen, Grok)
 
-### Phase 4: 配置切换功能 ✅ (已完成 - v0.2.0)
-- [x] **切换命令** (`asw switch <agent> <model>`)
+### Phase 4: 配置切换功能 ✅ (已完成 - v0.8.0)
+- [x] **切换命令** (`asw switch <tool> <provider> <model>`)
   - [x] 自动备份原配置
+  - [x] 应用新配置
+  - [x] 环境变量警告
+  - [x] 三参数语法：工具 + 供应商 + 模型
   - [x] 应用新配置
   - [x] 环境变量警告
 - [x] **状态显示** (`asw status`)
@@ -227,10 +278,11 @@ asw sync status
 - [x] **Shell 自动补全** (Bash/Zsh/Fish)
 - [x] **丰富的文档和示例**
 
-### Phase 7: 扩展功能 (部分完成 - v0.4.0)
-- [x] **配置同步** ✅ (已完成 - v0.4.0)
+### Phase 7: 扩展功能 ✅ (已完成 - v0.6.0)
+- [x] **配置同步** ✅ (已完成 - v0.6.0)
   - [x] 通过 Git 同步配置
   - [x] 多机器配置共享
+  - [x] 配置加密存储
 - [ ] **性能测试模式**
   - [ ] 在不同模型上运行相同的测试用例
   - [ ] 生成对比报告
@@ -267,43 +319,40 @@ cargo install --path .
 ### 1. 自动初始化
 首次运行任何命令时，AgentSwitch 会自动创建配置目录 `~/.agentswitch/`。
 
-### 2. 添加模型配置
+### 2. 添加供应商配置
 ```bash
-# 添加智谱 GLM 模型配置
-asw model add glm \
-  --base-url "https://open.bigmodel.cn/api/paas/v4" \
+# 添加智谱 GLM 供应商配置
+asw provider add zhipu \
+  --base-url "https://open.bigmodel.cn/api/anthropic" \
   --api-key "sk-..." \
-  --model "glm-4"
+  --protocol "anthropic" \
+  --models "glm-4.7-flash,glm-5"
 
-# 添加京东云模型配置
-asw model add jdcloud \
+# 添加京东云供应商配置
+asw provider add jdcloud \
   --base-url "https://aiapi.jdcloud.com/v1" \
   --api-key "your-api-key" \
-  --model "glm-4"
+  --protocol "openai" \
+  --models "glm-4"
 
-# 添加 MiniMax 配置
-asw model add minimax \
-  --base-url "https://api.minimax.chat/v1" \
-  --api-key "your-api-key" \
-  --model "abab6.5s-chat"
-
-# 添加 DeepSeek 配置
-asw model add deepseek \
+# 添加 DeepSeek 供应商配置
+asw provider add deepseek \
   --base-url "https://api.deepseek.com/v1" \
   --api-key "your-api-key" \
-  --model "deepseek-chat"
+  --protocol "openai" \
+  --models "deepseek-chat"
 ```
 
 ### 3. 切换工具配置
 ```bash
-# 将 opencode 切换到 GLM-4
-asw switch opencode glm
+# 将 claude-code 切换到智谱 GLM-4.7-flash
+asw switch claude-code zhipu glm-4.7-flash
 
-# 将 claude-code 切换到自定义 Anthropic 兼容模型
-asw switch claude-code my-claude-model
+# 将 opencode 切换到 DeepSeek
+asw switch opencode deepseek deepseek-chat
 
-# 将 gemini-cli 切换到 DeepSeek
-asw switch gemini-cli deepseek
+# 将 gemini-cli 切换到自定义模型
+asw switch gemini-cli my-provider my-model
 ```
 
 ### 4. 查看状态
@@ -311,30 +360,45 @@ asw switch gemini-cli deepseek
 # 查看所有工具当前使用的模型
 asw status
 
-# 列出所有已配置的模型
-asw model list
+# 查看详细状态
+asw status --detailed
+
+# 列出所有供应商
+asw provider list
+
+# 显示供应商详情
+asw provider show zhipu
 ```
 
-### 5. 配置管理
+### 5. 供应商管理
 ```bash
-# 编辑模型配置
-asw model edit glm --model "glm-4-turbo"
+# 测试供应商连接
+asw provider test zhipu
 
-# 删除模型配置
-asw model remove glm
+# 从 API 获取模型列表
+asw provider fetch-models zhipu
+
+# 手动添加模型到供应商
+asw provider add-models zhipu glm-4-plus glm-4-air
+
+# 删除供应商
+asw provider remove zhipu
 ```
 
 ## 📋 命令参考
 
-### 当前可用命令（v0.4.0）
+### 当前可用命令（v0.8.1）
 ```
 asw
-├── model             # 模型配置管理
-│   ├── add          # 添加模型配置
-│   ├── list         # 列出所有模型
-│   ├── remove       # 删除模型配置
-│   └── edit         # 编辑模型配置
-├── switch            # 切换工具的模型配置
+├── provider          # 供应商配置管理
+│   ├── add          # 添加供应商
+│   ├── list         # 列出所有供应商
+│   ├── show         # 显示供应商详情
+│   ├── remove       # 删除供应商
+│   ├── test         # 测试供应商连接
+│   └── fetch-models # 从 API 获取模型列表
+├── agent             # Agent 工具管理
+├── switch            # 切换工具的供应商/模型配置
 ├── status            # 显示当前配置状态
 ├── backup            # 配置备份管理
 │   ├── list         # 列出备份
@@ -356,11 +420,16 @@ asw
 ├── completion        # Shell 自动补全
 │   ├── generate     # 生成补全脚本
 │   └── install      # 安装补全脚本
-└── sync              # Git 同步
-    ├── init         # 初始化 Git 仓库
-    ├── status       # 查看同步状态
-    ├── push         # 推送到远程
-    └── pull         # 从远程拉取
+├── sync              # Git 同步
+│   ├── init         # 初始化 Git 仓库
+│   ├── status       # 查看同步状态
+│   ├── push         # 推送到远程
+│   └── pull         # 从远程拉取
+└── crypto            # 加密密钥管理
+    ├── keygen       # 生成加密密钥
+    ├── key-export   # 导出密钥
+    ├── key-import   # 导入密钥
+    └── status       # 查看加密状态
 ```
 
 ### 计划中的命令
@@ -378,80 +447,98 @@ asw
 
 ### 国内厂商
 
-#### 智谱 GLM
+#### 智谱 GLM (Anthropic 协议)
 ```bash
-asw model add glm \
+asw provider add zhipu \
+  --base-url "https://open.bigmodel.cn/api/anthropic" \
+  --api-key "your-zhipu-api-key" \
+  --protocol "anthropic" \
+  --models "glm-4.7-flash,glm-5"
+```
+
+#### 智谱 GLM (OpenAI 协议)
+```bash
+asw provider add zhipu-openai \
   --base-url "https://open.bigmodel.cn/api/paas/v4" \
   --api-key "your-zhipu-api-key" \
-  --model "glm-4"
+  --protocol "openai" \
+  --models "glm-4-flash,glm-4-plus"
 ```
 
 #### 京东云
 ```bash
-asw model add jdcloud \
+asw provider add jdcloud \
   --base-url "https://aiapi.jdcloud.com/v1" \
   --api-key "your-jdcloud-api-key" \
-  --model "glm-4"
+  --protocol "openai" \
+  --models "glm-4"
 ```
 
 #### DeepSeek
 ```bash
-asw model add deepseek \
+asw provider add deepseek \
   --base-url "https://api.deepseek.com/v1" \
   --api-key "your-deepseek-api-key" \
-  --model "deepseek-chat"
+  --protocol "openai" \
+  --models "deepseek-chat,deepseek-reasoner"
 ```
 
 #### MiniMax
 ```bash
-asw model add minimax \
+asw provider add minimax \
   --base-url "https://api.minimax.chat/v1" \
   --api-key "your-minimax-api-key" \
-  --model "abab6.5s-chat"
+  --protocol "openai" \
+  --models "abab6.5s-chat"
 ```
 
 #### 通义千问 (Qwen)
 ```bash
-asw model add qwen \
+asw provider add qwen \
   --base-url "https://dashscope.aliyuncs.com/compatible-mode/v1" \
   --api-key "your-qwen-api-key" \
-  --model "qwen-turbo"
+  --protocol "openai" \
+  --models "qwen-turbo,qwen-plus,qwen-max"
 ```
 
 ### 国际厂商
 
 #### OpenAI
 ```bash
-asw model add openai \
+asw provider add openai \
   --base-url "https://api.openai.com/v1" \
   --api-key "your-openai-api-key" \
-  --model "gpt-4o"
+  --protocol "openai" \
+  --models "gpt-4o,gpt-4o-mini,o1-preview"
 ```
 
 #### Anthropic (Claude)
 ```bash
-asw model add claude \
+asw provider add claude \
   --base-url "https://api.anthropic.com" \
   --api-key "your-anthropic-api-key" \
-  --model "claude-sonnet-4-20250514"
+  --protocol "anthropic" \
+  --models "claude-sonnet-4-20250514,claude-opus-4-20250514"
 ```
 
 ### 本地部署
 
 #### Ollama
 ```bash
-asw model add ollama \
+asw provider add ollama \
   --base-url "http://localhost:11434/v1" \
   --api-key "ollama" \
-  --model "llama3"
+  --protocol "openai" \
+  --models "llama3,qwen2.5,codellama"
 ```
 
 #### vLLM
 ```bash
-asw model add vllm \
+asw provider add vllm \
   --base-url "http://localhost:8000/v1" \
   --api-key "none" \
-  --model "your-model-name"
+  --protocol "openai" \
+  --models "your-model-name"
 ```
 
 ## 🛠️ 技术架构
@@ -495,28 +582,69 @@ agentswitch/
 
 ### 核心设计
 
-#### AgentAdapter Trait（已实现）
+#### AgentAdapter Trait（v0.8.0+）
 ```rust
-pub trait AgentAdapter {
+pub trait AgentAdapter: Send + Sync {
     fn name(&self) -> &str;
     fn detect(&self) -> anyhow::Result<bool>;
     fn config_path(&self) -> anyhow::Result<PathBuf>;
     fn backup(&self) -> anyhow::Result<Backup>;
-    fn apply(&self, model_config: &ModelConfig) -> anyhow::Result<()>;
+    fn apply(&self, provider: &Provider, model: &str) -> anyhow::Result<()>;
     fn restore(&self, backup: &Backup) -> anyhow::Result<()>;
     fn current_model(&self) -> anyhow::Result<Option<String>>;
 }
 ```
 
-#### ModelConfig 结构（已实现）
+#### Provider 结构（v0.8.0+）
 ```rust
-pub struct ModelConfig {
+pub struct Provider {
+    /// 供应商名称（唯一标识符）
     pub name: String,
+    /// API 基础 URL
     pub base_url: String,
+    /// API Key（加密存储）
     pub api_key: String,
-    pub model_id: String,
-    pub extra_params: Option<HashMap<String, serde_json::Value>>,
+    /// 协议类型（OpenAI / Anthropic）
+    pub protocol: Protocol,
+    /// 可用模型列表
+    pub models: Vec<String>,
 }
+
+pub struct ActiveConfig {
+    /// 工具名称
+    pub tool: String,
+    /// 供应商名称
+    pub provider: String,
+    /// 模型名称
+    pub model: String,
+}
+```
+
+#### 配置文件格式（v0.8.0+）
+```toml
+# ~/.agentswitch/config.toml
+
+[[providers]]
+name = "zhipu"
+base_url = "https://open.bigmodel.cn/api/anthropic"
+api_key = "your-key"
+protocol = "anthropic"
+models = ["glm-4.7-flash", "glm-5"]
+
+[[providers]]
+name = "deepseek"
+base_url = "https://api.deepseek.com/v1"
+api_key = "your-key"
+protocol = "openai"
+models = ["deepseek-chat"]
+
+[active.claude-code]
+provider = "zhipu"
+model = "glm-4.7-flash"
+
+[active.opencode]
+provider = "deepseek"
+model = "deepseek-chat"
 ```
 
 ## 🔧 开发
@@ -533,10 +661,43 @@ cargo clippy
 cargo fmt
 
 # 运行
-cargo run -- model list
+cargo run -- provider list
+cargo run -- status
 ```
 
 ## 📊 版本历史
+
+### v0.8.1 (2026-03-31)
+- 🔧 **Adapter 签名更新**: `AgentAdapter::apply()` 方法签名改为 `apply(&self, provider: &Provider, model: &str)`
+- 🧹 **代码清理**: 清理所有适配器中的旧代码，统一使用新的 Provider-Model 架构
+- 📝 **文档更新**: 忽略开发计划文件，更新文档与代码保持一致
+
+### v0.8.0 (2026-03-31)
+- 🏗️ **Provider-Model 架构重构**: 完全重构数据模型
+  - 新增 `Provider` 结构：供应商配置（base_url, api_key, protocol, models）
+  - 新增 `ActiveConfig` 结构：工具激活配置（tool -> {provider, model}）
+- 🔄 **命令重构**: `model` 命令被 `provider` 命令替代
+  - `asw provider add/list/show/remove/test/fetch-models`
+  - `asw switch <tool> <provider> <model>` (三参数语法)
+- 📁 **配置格式更新**: `[[models]]` → `[[providers]]`，`[active_models]` → `[active]`
+- 🔃 **自动迁移**: 旧配置格式自动迁移到新格式
+- ✅ 支持 OpenAI 和 Anthropic 两种协议
+
+### v0.7.0 (2026-03-31)
+- ✨ **多模型支持**: 一个供应商支持多个模型
+- ✨ **Provider 测试**: 测试 API 连接和模型可用性
+- ✨ **模型列表获取**: 从 API 自动获取可用模型
+- ✨ **批量配置**: 从文件批量添加模型
+
+### v0.6.0 (2026-03-31)
+- 🔐 **配置加密系统**: AES-256-GCM 加密，密钥本地存储
+- 🔄 **Git 同步完善**: 完整的多机配置同步
+- 🔧 **opencode 适配器**: 新增对 opencode CLI 工具的支持
+- ⚠️ **codex 适配器**: 暂时禁用（Response API 兼容性问题）
+
+### v0.5.1 (2026-03-31)
+- 🔧 **opencode 适配器**: 新增对 opencode CLI 工具的支持
+- 🐛 修复多个检测和适配器问题
 
 ### v0.4.0 (2026-03-11)
 - ✨ **交互式配置向导** - 友好的 CLI 向导引导用户完成初始化配置

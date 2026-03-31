@@ -2,9 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-# Changelog
+## [0.8.2] - 2026-03-31
 
-All notable changes to this project will be documented in this file.
+### Documentation
+- **README 完整更新**: 同步到 v0.8.x 架构
+  - 更新命令参考：`model` → `provider` 命令
+  - 更新 switch 语法：`asw switch <tool> <provider> <model>`
+  - 更新供应商配置示例（新增协议参数）
+  - 更新 AgentAdapter trait 签名
+  - 新增 Provider 和 ActiveConfig 结构说明
+  - 新增配置文件格式示例
+  - 更新预设管理命令（create/delete/update/import/export）
+  - 更新批量操作命令（--agent/--parallel/--dry-run）
+  - 更新 wizard/doctor/completion/sync 命令格式
+  - 新增配置加密功能说明
+- **CHANGELOG 整理**: 修复重复标题，添加 v0.8.1 记录
+- **版本历史更新**: 添加 v0.5.1 ~ v0.8.2 完整版本记录
+
+---
+
+## [0.8.1] - 2026-03-31
+
+### Changed
+- **Adapter 签名更新**: `AgentAdapter::apply()` 方法签名从 `apply(&self, model_config: &ModelConfig)` 改为 `apply(&self, provider: &Provider, model: &str)`
+- **代码清理**: 清理所有适配器中的旧代码，统一使用新的 Provider-Model 架构
+- **文档更新**: 忽略 `docs/superpowers/` 目录（开发计划文件不纳入版本控制）
+
+### Fixed
+- 修复所有适配器编译警告
+- 统一代码风格
+
+---
 
 ## [0.8.0] - 2026-03-31
 
